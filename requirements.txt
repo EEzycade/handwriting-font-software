@@ -1,0 +1,2 @@
+Pillow==7.2.0
+potracer==0.0.1
