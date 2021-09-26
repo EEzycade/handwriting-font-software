@@ -47,7 +47,7 @@ def convert_to_svg(img: PIL.Image, turdsize=50, opttolerance=0.2, blacklevel=0.5
     
     For more information on the different parameters, see http://potrace.sourceforge.net/potrace.pdf
     """
-    bitmap = potrace.Bitmap(img)
+    bitmap = potrace.Bitmap(img, blacklevel=blacklevel)
     path = bitmap.trace(turdsize=turdsize, opttolerance=opttolerance, **kwargs)
 
     data = []
