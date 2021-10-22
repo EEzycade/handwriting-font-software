@@ -2,3 +2,9 @@ __pycache__
 .idea
 *.svg
 *.otf
+.vscode/
+
+# Server Files
+server/*/__pycache__/
+server/app/app/uploads
+server/app/env/
