@@ -18,28 +18,35 @@ def __main__():
             input_path = path + filename
             output_path = path + filename.split(".")[0] + ".svg"
             img = PIL.Image.open(input_path)
+            # Seems that fonttools uses a different coordinate system than normal svgs, so we need to flip them to accomodate
+            img = img.transpose(PIL.Image.FLIP_TOP_BOTTOM)
             print(f"Loaded '{input_path}'")
-            svg = image_converter.convert_to_svg(img)
+            svg = image_converter.convert_to_svg(
+                img,
+                preprocess_steps=[
+                    lambda path: image_converter.remove_zigzags(path, angle=90),
+                    lambda path: image_converter.rescale(path, height=200)
+                ],
+            )
 
             with open(output_path, "w") as file:
                 file.write(svg)
             print(f"Saved to '{output_path}'")
 
-    generate_from_svgs(path)
+    font = generate_from_svgs(path)
+    print(f"Font complete: '{font}'")
 
 
 def generate_from_svgs(path):
     default_char = default_charstr()
     char_strings = {
         ".notdef": default_char,
-        "space": default_char,
         ".null": default_char,
+        "space": draw_blank(),
     }
 
     glyph_order = [".notdef", ".null", "space"]
     char_map = {32: "space"}
-    advance_widths = {".notdef": 600, "space": 500, ".null": 250}
-    advance_heights = {".notdef": 600, "space": 500, ".null": 250}
 
     for filename in os.listdir(path):
         if filename.split(".")[-1] == "svg":
@@ -48,10 +55,8 @@ def generate_from_svgs(path):
             char_strings[char] = char_string
             glyph_order.append(char)
             char_map[ord(char)] = char
-            advance_widths[char] = 250
-            advance_heights[char] = 250
 
-    fb = FontBuilder(1024, isTTF=False)
+    fb = FontBuilder(300, isTTF=False)
     fb.setupGlyphOrder(glyph_order)
     fb.setupCharacterMap(char_map)
 
@@ -67,16 +72,19 @@ def generate_from_svgs(path):
     )
 
     fb.setupCFF(name_strings["psName"], {"FullName": name_strings["psName"]}, char_strings, {})
-    lsb = {gn: cs.calcBounds(None)[0] for gn, cs in char_strings.items()}
+    box = {gn: cs.calcBounds(None) for gn, cs in char_strings.items()}
     metrics = {}
-    for gn, advanceWidth in advance_widths.items():
-        metrics[gn] = (advanceWidth, lsb[gn])
+    for char in char_strings:
+        # width, left-bound
+        metrics[char] = (box[char][2] + 20, -10)
+    metrics["space"] = (120, 0)
     fb.setupHorizontalMetrics(metrics)
-    fb.setupHorizontalHeader(ascent=824, descent=200)
+    fb.setupHorizontalHeader(ascent=225, descent=-75)
     fb.setupNameTable(name_strings)
-    fb.setupOS2(sTypoAscender=824, usWinAscent=824, usWinDescent=200)
+    fb.setupOS2(sTypoAscender=225, sTypoDescender=-75)
     fb.setupPost()
     fb.save("test.otf")
+    return "test.otf"
 
 
 # create char string to use in otf file from svg
@@ -87,14 +95,20 @@ def draw_charstr(filename):
 
     return pen.getCharString()
 
+def draw_blank():
+    pen = T2CharStringPen(200, None)
+    pen.moveTo((0,0))
+    pen.closePath()
+    return pen.getCharString()
+
 
 # default char string; currently a placeholder
 def default_charstr():
-    pen = T2CharStringPen(600, None)
-    pen.moveTo((100, 100))
-    pen.lineTo((100, 1000))
-    pen.curveTo((200, 900), (400, 900), (500, 1000))
-    pen.lineTo((500, 100))
+    pen = T2CharStringPen(200, None)
+    pen.moveTo((0, 0))
+    pen.lineTo((200, 0))
+    pen.lineTo((200, 200))
+    pen.lineTo((0, 200))
     pen.closePath()
     return pen.getCharString()
 

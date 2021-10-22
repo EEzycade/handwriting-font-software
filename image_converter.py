@@ -14,13 +14,13 @@ def __main__():
     
     img = PIL.Image.open(img_input_path)
     print(f"Loaded '{img_input_path}'")
-    svg = convert_to_svg(img)
+    svg = convert_to_svg(img, preprocess_steps=[lambda path: remove_zigzags(path, angle=75)])
 
     with open(img_output_path, "w") as file:
         file.write(svg)
     print(f"Saved to '{img_output_path}'")
 
-def convert_to_svg(img: PIL.Image, turdsize=50, opttolerance=0.2, blacklevel=0.5, max_angle=75, blur_radius=3, **kwargs) -> str:
+def convert_to_svg(img: PIL.Image, preprocess_steps=[], turdsize=50, opttolerance=0.2, blacklevel=0.5, blur_radius=3, **kwargs) -> str:
     """Convert a PIL Image to an SVG string
     
     img: PIL.Image
@@ -43,9 +43,6 @@ def convert_to_svg(img: PIL.Image, turdsize=50, opttolerance=0.2, blacklevel=0.5
             - POTRACE_TURNPOLICY_MINORITY = 4
             - POTRACE_TURNPOLICY_MAJORITY = 5
             - POTRACE_TURNPOLICY_RANDOM = 6
-    max_angle: float
-        If two angles in a row exceed this value, remove the intermediate points.
-        Measured in degrees.
     blur_radius: int
         Before converting to SVG, the image is blurred to remove any sharp edges.
         This parameter controls how strongly to blur. Larger values tend to make
@@ -62,7 +59,8 @@ def convert_to_svg(img: PIL.Image, turdsize=50, opttolerance=0.2, blacklevel=0.5
     bitmap = potrace.Bitmap(img, blacklevel=blacklevel)
     path = bitmap.trace(turdsize=turdsize, opttolerance=opttolerance, **kwargs)
 
-    remove_zigzags(path, angle=max_angle)
+    for preprocess_step in preprocess_steps:
+        preprocess_step(path)
 
     data = []
     for curve in path:
@@ -80,13 +78,14 @@ def convert_to_svg(img: PIL.Image, turdsize=50, opttolerance=0.2, blacklevel=0.5
         data.append("z")
     data = "".join(data)
 
+    width, height = kwargs.get("width", img.width), kwargs.get("height", img.height)
     return f"""
     <svg version="1.1"
          xmlns="http://www.w3.org/2000/svg"
          xmlns:xlink="http://www.w3.org/1999/xlink"
-         width="{img.width}"
-         height="{img.height}"
-         viewBox="0 0 {img.width} {img.height}">
+         width="{width}"
+         height="{height}"
+         viewBox="0 0 {width} {height}">
 
         <path stroke="none"
               fill="black"
@@ -131,6 +130,37 @@ def remove_zigzags(path: potrace.Path, angle=90):
                 curve[i]._segment.c[2] = p3
             i += 1
 
+def rescale(path: potrace.Path, height=1000, width=None):
+    """Rescale a path
+
+    path: Path
+        The path to rescale (inplace)
+    height: int
+        Rescale y coordinates to go from 0 to height
+    width: int or None
+        Rescale x coordinates to go from 0 to width, or if width is None
+        keep the image proportional
+    """
+    maxx, minx = -np.inf, np.inf
+    maxy, miny = -np.inf, np.inf
+    for curve in path:
+        for segment in curve.segments:
+            for pt in (segment.c, segment.end_point) if segment.is_corner else (segment.c1, segment.c2, segment.end_point):
+                maxx = max(maxx, pt.x)
+                maxy = max(maxy, pt.y)
+                minx = min(minx, pt.x)
+                miny = min(miny, pt.y)
+    delta_x = maxx - minx
+    delta_y = maxy - miny
+
+    if width is None:
+        width = height * delta_x / delta_y
+
+    for curve in path:
+        for segment in curve.segments:
+            for pt in (segment.c, segment.end_point) if segment.is_corner else (segment.c1, segment.c2, segment.end_point):
+                pt.x = (pt.x - minx) * width / delta_x
+                pt.y = (pt.y - miny) * height / delta_y
 
 if __name__ == "__main__":
     __main__()
