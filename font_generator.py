@@ -5,7 +5,8 @@ from fontTools.fontBuilder import FontBuilder
 from fontTools.pens.t2CharStringPen import T2CharStringPen
 import image_converter
 import PIL.Image
-
+import yaml
+from tqdm import tqdm
 
 def __main__():
     if len(sys.argv) < 2:
@@ -13,25 +14,29 @@ def __main__():
         return
 
     path = sys.argv[1]
-    for filename in os.listdir(path):
-        if filename.split(".")[-1] == "jpeg":
+    char_settings = yaml.safe_load(open("character-settings.yaml"))
+    for filename in tqdm([
+                filename for filename in os.listdir(path)
+                if filename.split(".")[-1] in ["jpeg", "jpg", "png"]
+                # there's gotta be a better way
+            ]):
+            char = filename.split(".")[0]
             input_path = path + filename
             output_path = path + filename.split(".")[0] + ".svg"
             img = PIL.Image.open(input_path)
             # Seems that fonttools uses a different coordinate system than normal svgs, so we need to flip them to accomodate
             img = img.transpose(PIL.Image.FLIP_TOP_BOTTOM)
-            print(f"Loaded '{input_path}'")
             svg = image_converter.convert_to_svg(
                 img,
                 preprocess_steps=[
-                    lambda path: image_converter.remove_zigzags(path, angle=90),
-                    lambda path: image_converter.rescale(path, height=200)
+                    image_converter.remove_zigzags,
+                    image_converter.rescale,
+                    lambda path: image_converter.stretch_char(path, *image_converter.get_char_sizing(char, char_settings)),
                 ],
             )
 
             with open(output_path, "w") as file:
                 file.write(svg)
-            print(f"Saved to '{output_path}'")
 
     font = generate_from_svgs(path)
     print(f"Font complete: '{font}'")

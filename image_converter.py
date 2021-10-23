@@ -162,6 +162,30 @@ def rescale(path: potrace.Path, height=1000, width=None):
                 pt.x = (pt.x - minx) * width / delta_x
                 pt.y = (pt.y - miny) * height / delta_y
 
+def stretch_char(path: potrace.Path, lower: int, upper: int, original_height=1000):
+    """Stretch a character so that the canvas goes from y=lower to y=upper
+
+    path: potrace.Path
+        The path to stretch (inplace).
+    lower: int
+        The new minimum y coordinate.
+    upper: int
+        The new maximum y coordinate.
+    original_height: int (default 1000)
+        The original height (ie, all y coordinates are assumed to be between 0
+        and `original_height`).
+    """
+    for curve in path:
+        for segment in curve.segments:
+            for pt in (segment.c, segment.end_point) if segment.is_corner else (segment.c1, segment.c2, segment.end_point):
+                pt.x *= (upper - lower) / original_height
+                pt.y *= (upper - lower) / original_height
+                pt.y += lower
+
+def get_char_sizing(char: str, char_settings: dict):
+    """Extract lower and upper y coordinate of char according to char_settings"""
+    return char_settings["sizing"][char_settings["character-setting"][char]]
+
 if __name__ == "__main__":
     __main__()
 
