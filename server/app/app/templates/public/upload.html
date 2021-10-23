@@ -1,0 +1,38 @@
+{% extends "public/templates/public_template.html" %}
+
+{% set active_page = 'upload' %}
+
+{% block title %}
+    Upload
+{% endblock %}
+
+{% block main %}
+    <div class="container">
+        <div class="row">
+            <div class="col">
+                <h1>Upload an image</h1>
+                <hr>
+                {% include "public/templates/flash.html" %}
+                <form action="/upload" method="post" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="image">Image</label>
+                        <div class="custom-file">
+                            <input type="file" class="form-control-file" id="image" name="image" onchange="setFileName(this.value);" accept=".png,.jpg,.jpeg">
+                            <label for="image" class="custom-file-label">Select a file</label>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Upload</button>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block script %}
+    <script>
+        function setFileName(val) {
+            var fileName = val.split('\\').pop();
+            $('.custom-file-label').text(fileName);
+        }
+    </script>
+{% endblock %}
