@@ -34,7 +34,7 @@ def upload():
             return redirect(request.url)
         
         if image and allowed_image(image.filename):
-            if allowed_image_filesize(len(image.read())):
+            if allowed_image_filesize(len(request.files['image'])):
                 filename = secure_filename(image.filename)
                 os.makedirs(app.config['IMAGE_UPLOADS'], exist_ok=True)
                 image.save(os.path.join(app.config['IMAGE_UPLOADS'], filename))
