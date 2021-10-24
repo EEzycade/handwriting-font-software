@@ -1,0 +1,40 @@
+{% extends "public/templates/public_template.html" %}
+
+{% set active_page = 'image_to_font' %}
+
+{% block title %}
+    Image to Font
+{% endblock %}
+
+{% block main %}
+    <div class="container">
+        <div class="row">
+            <div class="col">
+                <h1>Process an image into a font</h1>
+                <hr>
+                {% include "public/templates/flash.html" %}
+                <form action="/image_to_font" method="post" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <select name="template_type" id="template_type">
+                            <option value="english_lower_case_letters">English Lower Case Letters</option>
+                          </select>
+                        <div class="custom-file">
+                            <input type="file" class="form-control-file" id="image" name="image" onchange="setFileName(this.value);" accept=".png,.jpg,.jpeg">
+                            <label for="image" class="custom-file-label">Select a file</label>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Process</button>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block script %}
+    <script>
+        function setFileName(val) {
+            var fileName = val.split('\\').pop();
+            $('.custom-file-label').text(fileName);
+        }
+    </script>
+{% endblock %}

@@ -7,4 +7,6 @@ __pycache__
 # Server Files
 server/*/__pycache__/
 server/app/app/uploads
+server/app/app/processed_images
+server/app/app/cut_images
 server/app/env/
