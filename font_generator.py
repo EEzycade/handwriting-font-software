@@ -14,7 +14,9 @@ def __main__():
         return
 
     path = sys.argv[1]
-    char_settings = yaml.safe_load(open("character-settings.yaml"))
+    char_types = yaml.safe_load(open("character-types.yaml"))
+
+    svgs = {}
     for filename in tqdm([
                 filename for filename in os.listdir(path)
                 if filename.split(".")[-1] in ["jpeg", "jpg", "png"]
@@ -22,21 +24,48 @@ def __main__():
             ]):
             char = filename.split(".")[0]
             input_path = path + filename
-            output_path = path + filename.split(".")[0] + ".svg"
             img = PIL.Image.open(input_path)
-            # Seems that fonttools uses a different coordinate system than normal svgs, so we need to flip them to accomodate
             img = img.transpose(PIL.Image.FLIP_TOP_BOTTOM)
-            svg = image_converter.convert_to_svg(
-                img,
-                preprocess_steps=[
-                    image_converter.remove_zigzags,
-                    image_converter.rescale,
-                    lambda path: image_converter.stretch_char(path, *image_converter.get_char_sizing(char, char_settings)),
-                ],
-            )
 
-            with open(output_path, "w") as file:
-                file.write(svg)
+            svgs[char] = image_converter.convert_to_path(img)
+            image_converter.remove_zigzags(svgs[char])
+
+    height_data = {char_type: [] for char_type in char_types.values()}
+    for char, svg in svgs.items():
+        height = image_converter.get_height(svg)
+        height_data[char_types[char]].append(height)
+
+    tall_upper = sum(height_data["tall"]) / len(height_data["tall"])
+    small_upper = sum(height_data["small"]) / len(height_data["small"])
+    desc_lower = ( # calculate average underhand taking base height into account
+        (
+            small_upper * len(height_data["descender"])
+          + tall_upper * len(height_data["tall-descender"])
+          - sum(height_data["descender"])
+          - sum(height_data["tall-descender"])
+        ) / (
+            len(height_data["descender"])
+          + len(height_data["tall-descender"])
+        )
+    )
+
+    scale_factor = 200 / tall_upper
+    tall_upper *= scale_factor
+    small_upper *= scale_factor
+    desc_lower *= scale_factor
+
+    for char, svg in svgs.items():
+        char_type = char_types[char]
+        image_converter.stretch_char(
+            svg,
+            lower=desc_lower if "descender" in char_type else 0.0,
+            upper=tall_upper if "tall" in char_type else small_upper,
+            #lower=200.0*desc_height/tall_height if "descender" in char_type else 0.0,
+            #upper=200.0 if "tall" in char_type else 200.0*small_height/tall_height,
+        )
+
+        with open(path + char+".svg", "w") as file:
+            file.write(image_converter.path_to_str(svg, 200, 200))
 
     font = generate_from_svgs(path)
     print(f"Font complete: '{font}'")

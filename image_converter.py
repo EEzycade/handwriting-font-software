@@ -14,14 +14,15 @@ def __main__():
     
     img = PIL.Image.open(img_input_path)
     print(f"Loaded '{img_input_path}'")
-    svg = convert_to_svg(img, preprocess_steps=[lambda path: remove_zigzags(path, angle=75)])
+    svg = convert_to_path(img)
+    remove_zigzags(svg, angle=75)
 
     with open(img_output_path, "w") as file:
-        file.write(svg)
+        file.write(path_to_str(svg, width=img.width, height=img.height))
     print(f"Saved to '{img_output_path}'")
 
-def convert_to_svg(img: PIL.Image, preprocess_steps=[], turdsize=50, opttolerance=0.2, blacklevel=0.5, blur_radius=3, **kwargs) -> str:
-    """Convert a PIL Image to an SVG string
+def convert_to_path(img: PIL.Image, turdsize=50, opttolerance=0.2, blacklevel=0.5, blur_radius=3, **kwargs) -> str:
+    """Convert a PIL Image to a potrace Path
     
     img: PIL.Image
         The image to convert.
@@ -50,7 +51,7 @@ def convert_to_svg(img: PIL.Image, preprocess_steps=[], turdsize=50, opttoleranc
         change for different image sizes.
 
     returns:
-        A string representation of the image as an SVG
+        A potrace.Path object representing the image
     
     For more information on the different parameters, see http://potrace.sourceforge.net/potrace.pdf
     """
@@ -59,9 +60,10 @@ def convert_to_svg(img: PIL.Image, preprocess_steps=[], turdsize=50, opttoleranc
     bitmap = potrace.Bitmap(img, blacklevel=blacklevel)
     path = bitmap.trace(turdsize=turdsize, opttolerance=opttolerance, **kwargs)
 
-    for preprocess_step in preprocess_steps:
-        preprocess_step(path)
+    return path
 
+def path_to_str(path: potrace.Path, height, width) -> str:
+    """Convert a Path to an SVG string"""
     data = []
     for curve in path:
         data.append(f"M{curve.start_point.x},{curve.start_point.y}")
@@ -78,7 +80,6 @@ def convert_to_svg(img: PIL.Image, preprocess_steps=[], turdsize=50, opttoleranc
         data.append("z")
     data = "".join(data)
 
-    width, height = kwargs.get("width", img.width), kwargs.get("height", img.height)
     return f"""
     <svg version="1.1"
          xmlns="http://www.w3.org/2000/svg"
@@ -162,7 +163,7 @@ def rescale(path: potrace.Path, height=1000, width=None):
                 pt.x = (pt.x - minx) * width / delta_x
                 pt.y = (pt.y - miny) * height / delta_y
 
-def stretch_char(path: potrace.Path, lower: int, upper: int, original_height=1000):
+def stretch_char(path: potrace.Path, lower: int, upper: int, width=None):
     """Stretch a character so that the canvas goes from y=lower to y=upper
 
     path: potrace.Path
@@ -175,16 +176,44 @@ def stretch_char(path: potrace.Path, lower: int, upper: int, original_height=100
         The original height (ie, all y coordinates are assumed to be between 0
         and `original_height`).
     """
+    maxx, minx = -np.inf, np.inf
+    maxy, miny = -np.inf, np.inf
     for curve in path:
         for segment in curve.segments:
             for pt in (segment.c, segment.end_point) if segment.is_corner else (segment.c1, segment.c2, segment.end_point):
-                pt.x *= (upper - lower) / original_height
-                pt.y *= (upper - lower) / original_height
+                maxx = max(maxx, pt.x)
+                maxy = max(maxy, pt.y)
+                minx = min(minx, pt.x)
+                miny = min(miny, pt.y)
+    delta_x = maxx - minx
+    delta_y = maxy - miny
+
+    if width is None:
+        width = (upper-lower) * delta_x / delta_y
+
+    for curve in path:
+        for segment in curve.segments:
+            for pt in (segment.c, segment.end_point) if segment.is_corner else (segment.c1, segment.c2, segment.end_point):
+                pt.x -= minx
+                pt.y -= miny
+
+                pt.x *= width / delta_x
+                pt.y *= (upper - lower) / delta_y
                 pt.y += lower
 
-def get_char_sizing(char: str, char_settings: dict):
-    """Extract lower and upper y coordinate of char according to char_settings"""
-    return char_settings["sizing"][char_settings["character-setting"][char]]
+def get_height(path):
+    maxx, minx = -np.inf, np.inf
+    maxy, miny = -np.inf, np.inf
+    for curve in path:
+        for segment in curve.segments:
+            for pt in (segment.c, segment.end_point) if segment.is_corner else (segment.c1, segment.c2, segment.end_point):
+                maxx = max(maxx, pt.x)
+                maxy = max(maxy, pt.y)
+                minx = min(minx, pt.x)
+                miny = min(miny, pt.y)
+    delta_x = maxx - minx
+    delta_y = maxy - miny
+    return delta_y
 
 if __name__ == "__main__":
     __main__()
