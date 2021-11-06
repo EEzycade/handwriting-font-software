@@ -1,3 +1,16 @@
 body {
     background-color: #f1f1f1;
 }
+
+#font-glyphs {
+    text-align: center;
+    font-size: 14px;
+}
+
+#font-glyphs:not(.dark-background) {
+    background-color: #fff;
+}
+#font-glyphs.dark-background {
+    background-color: #1e1e1e;
+    color: #fff;
+}

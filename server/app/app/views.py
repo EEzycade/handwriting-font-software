@@ -1,3 +1,4 @@
+from flask.helpers import send_from_directory
 from app import app
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from datetime import datetime
@@ -7,6 +8,13 @@ from app.image_to_font_utils import *
 import os
 from cv2 import imwrite, imread
 
+glyphs = [
+    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+    'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+    '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '-', '_', '=', '+', '{', '[', '}', ']', '|', ':', ';', '"', '\'', '<', ',', '>', '.', '?', '/', '\\', '~', '`'
+]
+
 def allowed_image(filename):
     ''' Check that the file extension is an accepted image '''
     return '.' in filename and \
@@ -15,6 +23,19 @@ def allowed_image(filename):
 def allowed_image_filesize(filesize):
     ''' Check that the file size is less than the allowed maximum '''
     return filesize < app.config['MAX_IMAGE_SIZE']
+
+def get_glyph(idx):
+    ''' Get the glyph from the glyphs list '''
+    if(idx < len(glyphs)):
+        return glyphs[idx]
+    else:
+        return ''
+app.jinja_env.globals.update(get_glyph=get_glyph)
+
+def get_font_list():
+    ''' Get the list of fonts from the fonts folder '''
+    return os.listdir('./app/' + app.config['FONTS_FOLDER'])
+app.jinja_env.globals.update(get_font_list=get_font_list)
 
 @app.route('/')
 def index():
@@ -115,3 +136,19 @@ def image_to_font():
                 return redirect(request.url)
 
     return render_template('public/image_to_font.html', title='Image To Font')
+
+@app.route('/fonts/<path:filename>')
+def fonts(filename):
+    return send_from_directory(app.config['FONTS_FOLDER'], secure_filename(filename), as_attachment=True)
+
+@app.route('/preview')
+def preview():
+    if request.args:
+        if request.args['font']:
+            data = request.args['font']
+            if data in get_font_list():
+                return render_template('public/preview.html', title='Font Preview', args=data)
+    for f in request.args.items():
+        if f[0] in get_font_list():
+            return render_template('public/preview.html', title='Font Preview', args=f[0])    
+    return render_template('public/preview.html', title='Font Preview', args='AmogusFont.ttf')

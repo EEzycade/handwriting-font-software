@@ -6,6 +6,7 @@ class Config(object):
     IMAGE_UPLOADS = "./app/uploads/"
     PROCESSED_IMAGES = "./app/processed_images"
     CUT_IMAGES = "./app/cut_images"
+    FONTS_FOLDER = "./fonts"
 
     ALLOWED_IMAGE_EXTENSIONS = ["png", "jpg", "jpeg"]
     MAX_IMAGE_SIZE = 8 * 1024 * 1024 # 8MB

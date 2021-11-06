@@ -21,7 +21,7 @@ cd app
 On Windows:
 
 ```
-.\env\bin\activate
+.\env\Scripts\activate
 ```
 On Linux:
 ```
@@ -52,6 +52,10 @@ cd app
 
 ```
 .\env\Scripts\activate
+```
+On Linux:
+```
+source env/bin/activate
 ```
 
 3. Set the app type:

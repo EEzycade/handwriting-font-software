@@ -1,0 +1,123 @@
+{% extends "public/templates/public_template.html" %}
+
+{% set active_page = 'preview' %}
+
+{% block title %}
+    {{ title }}
+{% endblock %}
+
+{% block main %}
+    <style>
+        @font-face {
+            font-family: 'PreviewFont';
+            src: url("{{ url_for('fonts', filename=args)}}");
+        }
+        .font-preview {
+            font-family: 'PreviewFont';
+        }
+    </style>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h1>{{ title }}</h1>
+            </div>
+        </div>
+        <hr/>
+        <form action="/preview" method="get">
+            <div class="input-group mb-3">
+                <select name="font" id="font-select" class="custom-select">
+                    {% for font in get_font_list() %}
+                        <option value="{{ font }}" {% if font == args %}selected{% endif %}>{{ font }}</option>
+                    {% endfor %}
+                </select>
+                <div class="input-group-append">
+                    <button class="btn btn-outline-secondary input-group-append" type="submit" id="font-select-button">Update Font</button>
+                </div>
+            </div>
+        </form>
+        <div class="font-section">
+            <div class="font-body">
+                <div class="card">
+                    <div class="card-header p-2">Regular Styling</div>
+                    <div class="font-preview card-body p-2 border-bottom">
+                        The quick brown fox jumps over a lazy dog
+                    </div>
+                    <div class="font-preview card-body p-2 border-bottom">
+                        Pack my box with five dozen liquor jugs
+                    </div>
+                    <div class="font-preview card-body p-2 border-bottom">
+                        Sphinx of black quartz, judge my vow
+                    </div>
+                    <div class="font-preview card-body p-2 border-bottom">
+                        The five boxing wizards jump quickly.
+                    </div>
+                    <div class="card-body p-2 border-bottom">
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text">Custom Input:</span>
+                            </div>
+                            <input type="text" name="custom-input" id="custom-input" class="form-control" oninput="customText();">
+                        </div>
+                    </div>
+                    <div id="custom-output" class="font-preview card-body p-2">&nbsp;</div>
+                </div>
+            </div>
+            
+            <div class="card mt-3">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="input-group col-sm">
+                            <div class="input-group-prepend">
+                                <label for="gridBackground" class="input-group-text">Background</label>
+                            </div>
+                            <select id="grid-background" class="custom-select" onchange="setGridBackground();">
+                                <option value="light">Light</option>
+                                <option value="dark">Dark</option>
+                            </select>
+                        </div>
+                        <div class="input-group col-sm">
+                            <div class="input-group-prepend">
+                                <label for="gridFontSize" class="input-group-text">Font Size</label>
+                            </div>
+                            <input type="number" class="form-control" id="grid-fontSize" value='14' min='1' max='56' onchange="setGridFontSize();">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <table id="font-glyphs" class="font-preview table table-bordered mt-1">
+                <tbody>
+                {% for i in range(10) %}
+                    <tr>
+                    {% for j in range(10) %}
+                        <td>
+                            {{ get_glyph(i * 10 + j) }}
+                        </td>
+                    {% endfor %}
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>  
+    </div>
+{% endblock %}
+{% block script %}
+<script>
+    function customText() {
+        var customText = document.getElementById("custom-input").value;
+        document.getElementById("custom-output").innerHTML = customText;
+    }
+    function setGridBackground() {
+        var background = document.getElementById("grid-background").value;
+        if(background == "dark") {
+            document.getElementById("font-glyphs").classList.add("dark-background");
+        } else {
+            document.getElementById("font-glyphs").classList.remove("dark-background");
+        }
+    }
+
+    function setGridFontSize() {
+        var fontSize = document.getElementById("grid-fontSize").value;
+        document.getElementById("font-glyphs").style.fontSize = fontSize + "px";
+    }
+</script>
+{% endblock %}
