@@ -4,16 +4,16 @@
 
 1. Make sure python is installed
 
-2. Create a virtual environment: 
-
-```
-python -m venv env
-```
-
-3. Navigate to the app:
+2. Navigate to the app:
 
 ```
 cd app
+```
+
+3. Create a virtual environment: 
+
+```
+python -m venv env
 ```
 
 4. Activate the virtual environment:
