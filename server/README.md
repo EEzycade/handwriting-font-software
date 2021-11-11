@@ -39,6 +39,10 @@ pip install --upgrade pip
 ```
 pip install -r requirements.txt
 ```
+or (if above fails)
+```
+python -m pip install -r requirements.txt
+```
 
 ## Running the app
 
@@ -46,6 +50,12 @@ pip install -r requirements.txt
 
 ```
 cd app
+```
+
+Hint: Copy this for an easy one-liner!
+
+```
+.\env\Scripts\activate; $env:FLASK_APP = "app"; $env:FLASK_ENV = "development"
 ```
 
 2. Activate the venv (virtual environment):
@@ -60,14 +70,29 @@ source env/bin/activate
 
 3. Set the app type:
 
+In Powershell:
+
 ```
 $env:FLASK_APP = "app"
+```
+In Command Prompt:
+
+```
+set FLASK_APP=app
 ```
 
 4. Set the flask environment (production, development, testing):
 
+In Powershell:
+
 ```
 $env:FLASK_ENV = "development"
+```
+
+In Command Prompt:
+
+```
+set FLASK_ENV=development
 ```
 
 5. Run the server:
@@ -76,6 +101,15 @@ $env:FLASK_ENV = "development"
 flask run
 ```
 
+## One-liners
+Instant run on Windows for Powershell:
+```
+.\env\Scripts\activate; $env:FLASK_APP = "app"; $env:FLASK_ENV = "development"; flask run
+```
+Instant run on Windows for Command Prompt:
+```
+.\env\Scripts\activate & set FLASK_APP=app & set FLASK_ENV=development & flask run
+```
 
 ## Python Package Requirements
 
