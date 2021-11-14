@@ -2,7 +2,7 @@
 # Before submission, we might want to compress them into only the methods we need
 
 from flask import flash
-from cv2 import resize,cvtColor,threshold,COLOR_BGR2GRAY,THRESH_BINARY
+from cv2 import resize,cvtColor,threshold,blur,adaptiveThreshold,getStructuringElement,morphologyEx,COLOR_BGR2GRAY,THRESH_BINARY,ADAPTIVE_THRESH_MEAN_C,MORPH_RECT,MORPH_ELLIPSE,MORPH_CLOSE,MORPH_OPEN
 from imutils import resize
 from numpy import zeros,argmin,sort,sum,asarray,copy,ndarray
 
@@ -16,9 +16,22 @@ template_symbols_dict = {
 def process_image(image):
     resized = resize(image, width=100)
     ratio = image.shape[0] / float(resized.shape[0])
-    gray = cvtColor(resized, COLOR_BGR2GRAY)
-    thresh = threshold(gray, 200, 255, THRESH_BINARY)[1]
-    cut = thresh.copy()
+    
+    #gray = cvtColor(resized, COLOR_BGR2GRAY)
+    #thresh = threshold(gray, 200, 255, THRESH_BINARY)[1]
+    
+    #threshold
+    gray = cvtColor(image, COLOR_BGR2GRAY)
+    blurred = blur(gray, (3,3))
+    thresh = adaptiveThreshold(blurred,255,ADAPTIVE_THRESH_MEAN_C,THRESH_BINARY,31,10)
+    
+    #remove noise
+    se1 = getStructuringElement(MORPH_RECT, (5,4))
+    se2 = getStructuringElement(MORPH_ELLIPSE, (3,4))
+    mask = morphologyEx(thresh, MORPH_CLOSE, se1)
+    mask = morphologyEx(mask, MORPH_OPEN, se2)
+    
+    cut = mask.copy()
     return [cut,ratio]
 
 # Returns [horizontal gridlines, vertical gridlines, score]
