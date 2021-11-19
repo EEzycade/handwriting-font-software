@@ -5,6 +5,7 @@ class Config(object):
 
     IMAGE_UPLOADS = "./app/uploads/"
     PROCESSED_IMAGES = "./app/processed_images"
+    GRID_IMAGES = "./app/grid_estimate_images"
     CUT_IMAGES = "./app/cut_images"
     FONTS_FOLDER = "./fonts"
 
