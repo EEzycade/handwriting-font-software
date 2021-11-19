@@ -44,7 +44,8 @@ def __main__(args):
 
 	if args.show_clustering:
 		colors = np.random.randint(0, 255, (args.characters,3), dtype=np.uint8)
-		clustered_image(colors, clusters, black_pixels, sample=sample).save(args.output + "/clusters.png")
+# 		clustered_image(colors, clusters, black_pixels, sample=sample).save(args.output + "/clusters.png")
+		clustered_image(colors, clusters, black_pixels).save(args.output + "/clusters.png")
 	
 	clusters = clusters.reshape((img.size[1], img.size[0]))
 	for k in tqdm(range(args.characters)):
