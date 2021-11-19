@@ -4,7 +4,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, jso
 from datetime import datetime
 from werkzeug.utils import secure_filename
 # Before submission, we should change this to only import the methods needed
-from app.image_to_font_utils import *
+from app.utils.photo_manipulation_utils import *
 import os
 from cv2 import imwrite, imread
 
@@ -112,19 +112,29 @@ def image_to_font():
                     image.save(upload_filepath)
                     flash('Image uploaded successfully', 'success')
 
-                    # process image
-                    processedImage = process_image(imread(upload_filepath))
+                    # process image. processedImage is a tuple (image,ratio)
+                    processed_image_tuple = process_image(imread(upload_filepath))
                     os.makedirs(app.config['PROCESSED_IMAGES'], exist_ok=True)
-                    imwrite(os.path.join(app.config['PROCESSED_IMAGES'], filename),processedImage)
+                    imwrite(os.path.join(app.config['PROCESSED_IMAGES'], filename),processed_image_tuple[0])
                     flash('Image processed successfully', 'success')
 
-                    # cut image
-                    symbols = template_symbols_dict[templateType]
-                    cutImages = cut_image(processedImage, templateType)
-                    cutImagePath = os.path.join(app.config['CUT_IMAGES'], image.filename)
-                    os.makedirs(cutImagePath, exist_ok=True)
-                    for symbol, cutImage in zip(symbols, cutImages):
-                        imwrite(os.path.join(cutImagePath, symbol + ".jpg"),cutImage)
+                    # find grid lines. For dev use only, this part is only for debugging purposes
+                    grid_positions_tuple = detect_gridlines(processed_image_tuple[0], templateType)
+                    grid_line_image = dev_grid_picture(processed_image_tuple[0], grid_positions_tuple[0], grid_positions_tuple[1])
+                    os.makedirs(app.config['GRID_IMAGES'], exist_ok=True)
+                    imwrite(os.path.join(app.config['GRID_IMAGES'], filename),grid_line_image)
+                    flash('Grid line estimate processed successfully', 'success')
+
+                    # cut image. cutImages is a tuple (cut_images, flattened_template)
+                    cut_images_tuple = cut_image(imread(upload_filepath), processed_image_tuple[0], templateType, processed_image_tuple[1])
+                    cut_image_path = os.path.join(app.config['CUT_IMAGES'], image.filename)
+                    os.makedirs(cut_image_path, exist_ok=True)
+                    for cutImage, symbol in zip(cut_images_tuple[0], cut_images_tuple[1]):
+                        if symbol != None:
+                            if cutImage == []:
+                                flash("Grid estimation error, check output", "warning")
+                            else:
+                                imwrite(os.path.join(cut_image_path, symbol + ".jpg"),cutImage)
                     flash('Image cut successfully', 'success')
 
                     return redirect(request.url)
