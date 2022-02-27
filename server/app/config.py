@@ -2,6 +2,7 @@ class Config(object):
     DEBUG = False
     TESTING = False
     SECRET_KEY = "a84ckkPu1reWiMFURW7oaA"
+    API_KEY = "254edfd6687a17117e5cfabe6e190cfa"
 
     IMAGE_UPLOADS = "./app/uploads/"
     PROCESSED_IMAGES = "./app/processed_images"

@@ -1,6 +1,6 @@
 {% extends "public/templates/public_template.html" %}
 
-{% set active_page = 'image_to_font' %}
+{% set active_page = 'index' %}
 
 {% block title %}
     Image to Font
@@ -13,14 +13,19 @@
                 <h1>Process an image into a font</h1>
                 <hr>
                 {% include "public/templates/flash.html" %}
-                <form action="/image_to_font" method="post" enctype="multipart/form-data">
+                <form action="/process" method="post" enctype="multipart/form-data">
                     <div class="form-group">
-                        <select name="template_type" id="template_type">
-                            <option value="english_lower_case_letters">English Lower Case Letters</option>
-                          </select>
+                        <div class="mb-3">
+                            <label for="template_type" class="form-label">Template Type</label>
+                            <select name="template_type" id="template_type" class="form-control">
+                                <option value="english_lower_case_letters">English Lower Case Letters</option>
+                                <option value="english_upper_case_letters">English Upper Case Letters</option>
+                                <option value="custom">Custom</option>
+                            </select>
+                        </div>
                         <div class="custom-file">
                             <input type="file" class="form-control-file" id="image" name="image" onchange="setFileName(this.value);" accept=".png,.jpg,.jpeg">
-                            <label for="image" class="custom-file-label">Select a file</label>
+                            <label for="image" class="custom-file-label">Select an image</label>
                         </div>
                     </div>
                     <button type="submit" class="btn btn-primary">Process</button>

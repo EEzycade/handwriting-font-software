@@ -1,3 +1,8 @@
+body.theme-dark {
+    background-color: #1d1d1d;
+    color: #fff;
+}
+
 body {
     background-color: #f1f1f1;
 }
@@ -13,4 +18,212 @@ body {
 #font-glyphs.dark-background {
     background-color: #1e1e1e;
     color: #fff;
+}
+
+#settings {
+    --background: #575757;
+    --border-radius: 10px;
+
+    background: var(--background);
+    border-radius: var(--border-radius);
+
+    box-shadow: 0 10px 30px rgba(65, 72, 86, 0.05);
+    padding: 10px 20px;
+
+    display: grid;
+    grid-template-columns: 30px auto;
+    align-items: center;
+}
+
+#settings label {
+    color: rgb(219, 219, 219);
+    position: relative;
+    cursor: pointer;
+    display: grid;
+    align-items: center;
+    width: fit-content;
+    transition: color .3s ease;
+}
+
+.dark-mode #settings {
+    --background: #b3b3b3;
+    --border-radius: 10px;
+
+    background: var(--background);
+    border-radius: var(--border-radius);
+
+    box-shadow: 0 10px 30px rgba(65, 72, 86, 0.05);
+    padding: 10px 20px;
+
+    display: grid;
+    grid-template-columns: 30px auto;
+    align-items: center;
+}
+
+.dark-mode #settings label {
+    color: rgb(54, 54, 54);
+    position: relative;
+    cursor: pointer;
+    display: grid;
+    align-items: center;
+    width: fit-content;
+    transition: color .3s ease;
+}
+
+#settings label::before,
+#settings label::after {
+    content: "";
+    position: absolute;
+}
+
+#settings label::before {
+    height: 2px;
+    width: 0px;
+    left: -27px;
+    background: #4F29F0;
+    border-radius: 2px;
+    transition: background 0.3s ease;
+}
+
+#settings label::after {
+    height: 4px;
+    width: 4px;
+    top: 8px;
+    left: -25px;
+    border-radius: 50%;
+}
+
+#settings input[type="checkbox"] {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    position: relative;
+    height: 15px;
+    width: 15px;
+    outline: none;
+    border: 0;
+    margin: 0 15px 0 0;
+    cursor: pointer;
+    background: #0e0e0e;
+    display: grid;
+    align-items: center;
+}
+
+#settings input[type="checkbox"]::before,
+#settings input[type="checkbox"]::after {
+    content: "";
+    position: absolute;
+    height: 2px;
+    top: auto;
+    background: #4F29F0; /*Checkbox color*/
+    border-radius: 2px;
+}
+
+#settings input[type="checkbox"]::before {
+    width: 0px;
+    right: 55%;
+    transform-origin: right bottom;
+}
+
+#settings input[type="checkbox"]::after {
+    width: 0px;
+    left: 40%;
+    transform-origin: left bottom;
+}
+
+#settings input[type="checkbox"]:checked::before {
+    animation: check-01 0.4s ease forwards;
+}
+#settings input[type="checkbox"]:checked::after {
+    animation: check-02 0.4s ease forwards;
+}
+
+#settings input[type="checkbox"]:not(:checked) + label {
+    color: #C3C8DE; /*Disabled Color*/
+    animation: move 0.3s ease 0.1s forwards;
+}
+#settings input[type="checkbox"]:not(:checked) + label::before {
+    background: #C3C8DE;
+    animation: slice 0.4s ease forwards;
+}
+
+#settings input[type="checkbox"]:checked + label::after {
+    animation: firework 0.5s ease forwards 0.1s;
+}
+
+@keyframes move {
+    50% {
+        padding-left: 8px;
+        padding-right: 0px;
+    }
+    100% {
+        padding-right: 4px;
+    }
+}
+@keyframes slice {
+    60% {
+        width: 100%;
+        left: 4px;
+    }
+    100% {
+        width: 100%;
+        left: -2px;
+        padding-left: 0;
+    }
+}
+@keyframes check-01 {
+    0% {
+        width: 4px;
+        top: auto;
+        transform: rotate(0);
+    }
+    50% {
+        width: 0px;
+        top: auto;
+        transform: rotate(0);
+    }
+    51% {
+        width: 0px;
+        top: 8px;
+        transform: rotate(45deg);
+    }
+    100% {
+        width: 5px;
+        top: 8px;
+        transform: rotate(45deg);
+    }
+}
+@keyframes check-02 {
+    0% {
+        width: 4px;
+        top: auto;
+        transform: rotate(0);
+    }
+    50% {
+        width: 0px
+        top: auto;
+        transform: rotate(0);
+    }
+    51% {
+        width: 0px;
+        top: 8px;
+        transform: rotate(-45deg);
+    }
+    100% {
+        width: 10px;
+        top: 8px;
+        transform: rotate(-45deg);
+    }
+}
+@keyframes firework {
+    0% {
+        opacity: 1;
+        box-shadow: 0 0 0 -2px #4F29F0, 0 0 0 -2px #4F29F0, 0 0 0 -2px #4F29F0, 0 0 0 -2px #4F29F0, 0 0 0 -2px #4F29F0, 0 0 0 -2px #4F29F0;
+    }
+    30% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+        box-shadow: 0 -15px 0 0px #4F29F0, 14px -8px 0 0px #4F29F0, 14px 8px 0 0px #4F29F0, 0 15px 0 0px #4F29F0, -14px 8px 0 0px #4F29F0, -14px -8px 0 0px #4F29F0;
+    }
 }

@@ -26,3 +26,5 @@ def create_template(count, box_w, line_w, img_sz=LETTER_SIZE, margin=INCH):
                            None, "black", line_w)
             drawn = drawn + 1
     template.show()
+
+create_template(25, 50, 5)

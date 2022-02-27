@@ -4,6 +4,9 @@ __pycache__
 *.otf
 .vscode/
 
+test-images/individual-characters/ab-2-scan/
+test-images/individual-characters/ms-scan/
+
 # Server Files
 server/*/__pycache__/
 servre/app/app/.history
