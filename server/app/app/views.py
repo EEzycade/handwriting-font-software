@@ -88,7 +88,7 @@ def process():
                     os.makedirs(cut_image_path, exist_ok=True)
                     for cutImage, symbol in zip(cut_images_tuple[0], cut_images_tuple[1]):
                         if symbol != None:
-                            if cutImage == []:
+                            if cutImage.size == 0:
                                 flash("Grid estimation error, check output", "warning")
                             else:
                                 imwrite(os.path.join(cut_image_path, symbol + ".jpg"),cutImage)
