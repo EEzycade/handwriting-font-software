@@ -22,7 +22,8 @@ def process_image(image):
 
     # Crop
     img = crop(image)
-    ratio = img.shape[0] / float(image.shape[0])
+    resized = resize(img, width=100)
+    ratio = img.shape[0] / float(resized.shape[0])
 
     #img = threshold(resized)
     #img = clean(img)
