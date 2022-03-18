@@ -209,6 +209,7 @@ def detect_gridlines(processed_image, template_type):
 # Function to cut out the individual symbols from the gridlines
 # Author: Braeden Burgard
 def cut_image(image, processed_image, template_type, ratio):
+    ratio = image.shape[1] / processed_image.shape[1]
     template = template_symbols_dict[template_type]
     grid_tuple = detect_gridlines(processed_image,template_type)
     cut_images = []
