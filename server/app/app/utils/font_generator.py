@@ -40,8 +40,8 @@ def gen_font(path, font_path):
         height = image_converter.get_height(svg)
         height_data[char_types[char]].append(height)
 
-    tall_upper = sum(height_data["tall"]) / len(height_data["tall"])
-    small_upper = sum(height_data["small"]) / len(height_data["small"])
+    tall_upper = sum(height_data["tall"]) / len(height_data["tall"]) if height_data["tall"] else 1
+    small_upper = sum(height_data["small"]) / len(height_data["small"]) if height_data["small"] else 1
     desc_lower = (  # calculate average underhand taking base height into account
         (
             small_upper * len(height_data["descender"])
@@ -52,7 +52,7 @@ def gen_font(path, font_path):
             len(height_data["descender"])
             + len(height_data["tall-descender"])
         )
-    )
+    ) if height_data["descender"] or height_data["tall-descender"] else 1
 
     scale_factor = 200 / tall_upper
     tall_upper *= scale_factor
