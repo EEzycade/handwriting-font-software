@@ -69,7 +69,7 @@ def gen_font(path, font_path):
             #upper=200.0 if "tall" in char_type else 200.0*small_height/tall_height,
         )
 
-        with open(path + char+".svg", "w") as file:
+        with open(os.path.join(path, char+".svg"), "w") as file:
             file.write(image_converter.path_to_str(svg, 200, 200))
 
     font = generate_from_svgs(path, font_path)
@@ -89,7 +89,7 @@ def generate_from_svgs(path, font_path):
 
     for filename in os.listdir(path):
         if filename.split(".")[-1] == "svg":
-            char_string = draw_charstr(path + filename)
+            char_string = draw_charstr(os.path.join(path, filename))
             char = filename.split('.')[0]
             char_strings[char] = char_string
             glyph_order.append(char)
