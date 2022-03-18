@@ -9,19 +9,23 @@ class Config(object):
     GRID_IMAGES = "./app/grid_estimate_images"
     CUT_IMAGES = "./app/cut_images"
     FONTS_FOLDER = "./fonts"
+    FONTS_FOLDER2 = "./app/fonts"
 
     ALLOWED_IMAGE_EXTENSIONS = ["png", "jpg", "jpeg"]
-    MAX_IMAGE_SIZE = 8 * 1024 * 1024 # 8MB
-    
+    MAX_IMAGE_SIZE = 8 * 1024 * 1024  # 8MB
+
     SESSION_COOKIE_SECURE = True
+
 
 class ProductionConfig(Config):
     pass
+
 
 class DevelopmentConfig(Config):
     DEBUG = True
 
     SESSION_COOKIE_STORE = False
+
 
 class TestingConfig(Config):
     TESTING = True

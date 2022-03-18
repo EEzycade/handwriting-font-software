@@ -7,7 +7,6 @@ from app.utils.security import requires_auth
 from app.utils.photo_manipulation_utils import process_image, detect_gridlines, dev_grid_picture, cut_image, resize_image
 from app.utils.web_utils import allowed_image, allowed_image_filesize, get_glyph, get_font_list
 from app.utils.constants import template_symbols_dict
-from app.utils.font_generator import gen_font
 import os
 from cv2 import imwrite, imread
 
@@ -113,8 +112,8 @@ def process():
                     # Author: Andrew Bauer
                     # Convert svgs into a font
                     # Author: Andrew Silkwood
-                    gen_font(cut_image_path, os.path.join(app.config['FONTS_FOLDER2'],
-                                                          os.path.splitext(image.filename)[0] + ".otf"))
+                    # font_generator.gen_font(cut_image_path, os.path.join(
+                    #    app.config['FONTS_FOLDER'], image.filename + ".otf"))
 
                     return render_template('public/image_to_font.html', title='Image To Font')
                 else:
