@@ -4,7 +4,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, jso
 from datetime import datetime
 from werkzeug.utils import secure_filename
 from app.utils.security import requires_auth
-from app.utils.photo_manipulation_utils import process_image, detect_gridlines, dev_grid_picture, cut_image, resize_image
+from app.utils.photo_manipulation_utils import process_image, detect_gridlines, dev_grid_picture, cut_image, resize_image, unbox_image
 from app.utils.web_utils import allowed_image, allowed_image_filesize, get_glyph, get_font_list
 from app.utils.constants import template_symbols_dict
 from app.utils.font_generator import gen_font
@@ -98,15 +98,20 @@ def process():
                         processed_image, resized_image, templateType, processed_image_tuple[1])
                     cut_image_path = os.path.join(
                         app.config['CUT_IMAGES'], image.filename)
+                    unboxed_image_path = os.path.join(
+                        app.config["UNBOXED_IMAGES"],
+                        os.path.splitext(image.filename)[0]
+                    )
                     os.makedirs(cut_image_path, exist_ok=True)
+                    os.makedirs(unboxed_image_path, exist_ok=True)
                     for cutImage, symbol in zip(cut_images_tuple[0], cut_images_tuple[1]):
                         if symbol != None:
                             if cutImage.size == 0:
                                 flash(
                                     "Grid estimation error, check output", "warning")
                             else:
-                                imwrite(os.path.join(cut_image_path,
-                                        symbol + ".jpg"), cutImage)
+                                imwrite(os.path.join(cut_image_path, symbol + ".jpg"), cutImage)
+                                imwrite(os.path.join(unboxed_image_path, symbol + ".jpg"), unbox_image(cutImage))
                     flash('Image cut successfully', 'success')
 
                     # Convert cut images into svgs
@@ -116,7 +121,7 @@ def process():
                     svg_path = os.path.join(app.config['SVG_IMAGES'], os.path.splitext(image.filename)[0])
                     os.makedirs(svg_path, exist_ok=True)
                     gen_font(
-                            cut_image_path,
+                            unboxed_image_path,
                             svg_path,
                             os.path.join(
                                 app.config['FONTS_FOLDER2'],

@@ -8,6 +8,7 @@ class Config(object):
     PROCESSED_IMAGES = "./app/processed_images"
     GRID_IMAGES = "./app/grid_estimate_images"
     CUT_IMAGES = "./app/cut_images"
+    UNBOXED_IMAGES = "./app/unboxed_images"
     SVG_IMAGES = "./app/svgs"
     FONTS_FOLDER = "./fonts"
     FONTS_FOLDER2 = "./app/fonts"

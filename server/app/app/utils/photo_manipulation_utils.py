@@ -2,9 +2,9 @@
 
 import math
 from flask import flash
-from cv2 import resize,cvtColor,threshold,blur,adaptiveThreshold,getStructuringElement,morphologyEx,findContours,contourArea,arcLength,approxPolyDP,drawContours,boundingRect,rectangle,getPerspectiveTransform,warpPerspective,imshow,Canny,COLOR_BGR2GRAY,THRESH_BINARY,ADAPTIVE_THRESH_MEAN_C,MORPH_RECT,MORPH_ELLIPSE,MORPH_CLOSE,MORPH_OPEN,RETR_EXTERNAL,CHAIN_APPROX_SIMPLE,INTER_NEAREST
+from cv2 import resize,cvtColor,threshold,blur,adaptiveThreshold,getStructuringElement,morphologyEx,findContours,contourArea,arcLength,approxPolyDP,drawContours,boundingRect,rectangle,getPerspectiveTransform,warpPerspective,imshow,floodFill,Canny,COLOR_BGR2GRAY,THRESH_BINARY,ADAPTIVE_THRESH_MEAN_C,MORPH_RECT,MORPH_ELLIPSE,MORPH_CLOSE,MORPH_OPEN,RETR_EXTERNAL,CHAIN_APPROX_SIMPLE,INTER_NEAREST
 from imutils import resize
-from numpy import zeros,argmin,sort,sum,asarray,copy,ndarray,float32
+from numpy import zeros,argmin,sort,sum,asarray,copy,ndarray,float32,uint8,where
 from app.utils.constants import template_symbols_dict
 
 # Returns [processed image, ratio of old/new image]
@@ -148,6 +148,78 @@ def matchCorners(src,dst):
 # Resize the image for faster processing in detecting gridlines
 def resize_image(image, width=100):
     return (resize(image, width), image.shape[1]/width)
+
+def find_square_in_middle(mask):
+    # If there are any rows/columns that are totally filled,
+    # use them as the starting box, otherwise use the original
+    # image frame as the box.
+    # Here we assume that the character is more or less in the
+    # center of the image. If the box goes through the center
+    # this may fail
+    if mask[:mask.shape[0]//2,:].all(1).any():
+        i = where(mask[:mask.shape[0]//2,:].all(1))[0][-1]
+    else:
+        i = 0
+    if mask[mask.shape[0]//2:,:].all(1).any():
+        j = where(mask[mask.shape[0]//2:,:].all(1))[0][0] + mask.shape[0]//2
+    else:
+        j = mask.shape[0] - 1
+    if mask[:,:mask.shape[1]//2].all(0).any():
+        k = where(mask[:,:mask.shape[1]//2].all(0))[0][-1]
+    else:
+        k = 0
+    if mask[:,mask.shape[1]//2:].all(0).any():
+        l = where(mask[:,mask.shape[1]//2:].all(0))[0][0] + mask.shape[1]//2
+    else:
+        l = mask.shape[1] - 1
+
+    # Greedily shrink the frame to get rid of the box as best as possible
+    while i < j and k < l and mask[i:j, k:l].any():
+        top   = mask[i, k:l].mean()
+        bot   = mask[j, k:l].mean()
+        left  = mask[i:j, k].mean()
+        right = mask[i:j, l].mean()
+        m = max(top, bot, left, right)
+        if m == top:
+            i += 1
+        elif m == bot:
+            j -= 1
+        elif m == left:
+            k += 1
+        elif m == right:
+            l -= 1
+        else: assert False
+    return i, j, k, l
+
+def unbox_image(img):
+    """Remove the box from the edges of the image
+
+    If the character goes out of the image bounds there's gonna be a problem
+    """
+    img_bw = 255*(img <= 128).astype(uint8)
+    mask = zeros((img.shape[0] + 2, img.shape[1] + 2), dtype=uint8)
+
+    # Floodfill all dark pixels near borders as they are likely part of the box
+    # If the character goes off the edge of the image, this is going to cause problems
+    for i in range(img_bw.shape[0]):
+        if img_bw[i, 0]:
+            floodFill(img_bw, mask, (0, i), 128)
+        if img_bw[i, -1]:
+            floodFill(img_bw, mask, (img_bw.shape[1]-1, i), 128)
+    for j in range(img_bw.shape[1]):
+        if img_bw[0, j]:
+            floodFill(img_bw, mask, (j, 0), 128)
+        if img_bw[-1, j]:
+            floodFill(img_bw, mask, (j, img_bw.shape[0]-1), 128)
+
+    i, j, k, l = find_square_in_middle(mask[1:-1,1:-1])
+    if i >= j or k >= l:
+        print("Failed to remove box! Returning original image. "
+              "This is likely because the box is not positioned in the image correctly. "
+              "Check the cut images to debug.")
+        return img
+    #assert i < j and k < l
+    return img[i:j, k:l]
 
 # Returns [horizontal gridlines, vertical gridlines, score]
 # Score is used to judge how well the gridlines were found. It is not used at the moment.

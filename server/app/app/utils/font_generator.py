@@ -7,6 +7,7 @@ import app.utils.image_converter as image_converter
 import PIL.Image
 import yaml
 from tqdm import tqdm
+import numpy as np
 
 
 def __main__():
@@ -38,7 +39,10 @@ def gen_font(path, svg_path, font_path):
     height_data = {char_type: [] for char_type in char_types.values()}
     for char, svg in svgs.items():
         height = image_converter.get_height(svg)
-        height_data[char_types[char]].append(height)
+        if np.isfinite(height):
+            height_data[char_types[char]].append(height)
+        else:
+            print(f"Warning! Character {char} has an invalid height: {height}. Check unboxed image.")
 
     tall_upper = sum(height_data["tall"]) / len(height_data["tall"]) if height_data["tall"] else 1
     small_upper = sum(height_data["small"]) / len(height_data["small"]) if height_data["small"] else 1
@@ -69,10 +73,13 @@ def gen_font(path, svg_path, font_path):
             #upper=200.0 if "tall" in char_type else 200.0*small_height/tall_height,
         )
 
-        with open(os.path.join(svg_path, char+".svg"), "w") as file:
-            file.write(image_converter.path_to_str(svg, 200, 200))
+        if svg:
+            with open(os.path.join(svg_path, char+".svg"), "w") as file:
+                file.write(image_converter.path_to_str(svg, 200, 200))
+        else:
+            print(f"Warning! SVG {char}.svg is empty.")
 
-    font = generate_from_svgs(path, font_path)
+    font = generate_from_svgs(svg_path, font_path)
     print(f"Font complete: '{font_path}'")
 
 
@@ -94,6 +101,7 @@ def generate_from_svgs(path, font_path):
             char_strings[char] = char_string
             glyph_order.append(char)
             char_map[ord(char)] = char
+    assert len(glyph_order) > 3, f"{path} does not contain any svgs"
 
     fb = FontBuilder(300, isTTF=False)
     fb.setupGlyphOrder(glyph_order)
