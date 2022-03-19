@@ -113,8 +113,16 @@ def process():
                     # Author: Andrew Bauer
                     # Convert svgs into a font
                     # Author: Andrew Silkwood
-                    gen_font(cut_image_path, os.path.join(app.config['FONTS_FOLDER2'],
-                                                          os.path.splitext(image.filename)[0] + ".otf"))
+                    svg_path = os.path.join(app.config['SVG_IMAGES'], os.path.splitext(image.filename)[0])
+                    os.makedirs(svg_path, exist_ok=True)
+                    gen_font(
+                            cut_image_path,
+                            svg_path,
+                            os.path.join(
+                                app.config['FONTS_FOLDER2'],
+                                os.path.splitext(image.filename)[0] + ".otf"
+                            )
+                    )
 
                     return render_template('public/image_to_font.html', title='Image To Font')
                 else:

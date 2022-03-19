@@ -17,7 +17,7 @@ def __main__():
     gen_font(sys.argv[1])
 
 
-def gen_font(path, font_path):
+def gen_font(path, svg_path, font_path):
     char_types = yaml.safe_load(
         open(os.getcwd() + "/app/utils/character-types.yaml"))
 
@@ -69,7 +69,7 @@ def gen_font(path, font_path):
             #upper=200.0 if "tall" in char_type else 200.0*small_height/tall_height,
         )
 
-        with open(os.path.join(path, char+".svg"), "w") as file:
+        with open(os.path.join(svg_path, char+".svg"), "w") as file:
             file.write(image_converter.path_to_str(svg, 200, 200))
 
     font = generate_from_svgs(path, font_path)
