@@ -10,6 +10,7 @@ from app.utils.constants import template_symbols_dict
 from app.utils.font_generator import gen_font
 import os
 from cv2 import imwrite, imread
+from shutil import rmtree
 
 # Home Page
 
@@ -60,8 +61,8 @@ def process():
 
                     # Upload Image
                     filename = secure_filename(image.filename)
-                    os.makedirs(app.config['IMAGE_UPLOADS'], exist_ok=True)
-                    os.makedirs(app.config['PROCESSED_IMAGES'], exist_ok=True)
+                    clean(app.config['IMAGE_UPLOADS'])
+                    clean(app.config['PROCESSED_IMAGES'])
                     upload_filepath = os.path.join(
                         app.config['IMAGE_UPLOADS'], filename)
                     image.seek(0)
@@ -73,7 +74,7 @@ def process():
                     # Author: Michaela Chen
                     processed_image_tuple = process_image(
                         imread(upload_filepath))
-                    os.makedirs(app.config['PROCESSED_IMAGES'], exist_ok=True)
+                    clean(app.config['PROCESSED_IMAGES'])
                     imwrite(os.path.join(
                         app.config['PROCESSED_IMAGES'], filename), processed_image_tuple[0])
                     flash('Image processed successfully', 'success')
@@ -87,7 +88,7 @@ def process():
                         resized_image, templateType)
                     grid_line_image = dev_grid_picture(
                         resized_image, grid_positions_tuple[0], grid_positions_tuple[1])
-                    os.makedirs(app.config['GRID_IMAGES'], exist_ok=True)
+                    clean(app.config['GRID_IMAGES'])
                     imwrite(os.path.join(
                         app.config['GRID_IMAGES'], filename), grid_line_image)
                     flash('Grid line estimate processed successfully', 'success')
@@ -102,8 +103,8 @@ def process():
                         app.config["UNBOXED_IMAGES"],
                         os.path.splitext(image.filename)[0]
                     )
-                    os.makedirs(cut_image_path, exist_ok=True)
-                    os.makedirs(unboxed_image_path, exist_ok=True)
+                    clean(cut_image_path)
+                    clean(unboxed_image_path)
                     for cutImage, symbol in zip(cut_images_tuple[0], cut_images_tuple[1]):
                         if symbol != None:
                             if cutImage.size == 0:
@@ -119,7 +120,7 @@ def process():
                     # Convert svgs into a font
                     # Author: Andrew Silkwood
                     svg_path = os.path.join(app.config['SVG_IMAGES'], os.path.splitext(image.filename)[0])
-                    os.makedirs(svg_path, exist_ok=True)
+                    clean(svg_path)
                     gen_font(
                             unboxed_image_path,
                             svg_path,
@@ -162,7 +163,7 @@ def upload():
             image.seek(0, os.SEEK_END)
             size = image.tell()
             if allowed_image_filesize(size):
-                os.makedirs(app.config['IMAGE_UPLOADS'], exist_ok=True)
+                os.makedirs(app.config['IMAGE_UPLOADS'])
                 image.seek(0)
                 image.save(os.path.join(app.config['IMAGE_UPLOADS'], filename))
                 flash('Image uploaded successfully', 'success')
@@ -193,3 +194,12 @@ def preview():
         if f[0] in get_font_list():
             return render_template('public/preview.html', title='Font Preview', args=f[0])
     return render_template('public/preview.html', title='Font Preview', args='AmogusFont.ttf')
+
+def clean(path):
+    if app.config["DEBUG"]:
+        try:
+            rmtree(path)
+            print(f"Cleared '{path}'")
+        except FileNotFoundError:
+            pass
+    os.makedirs(path, exist_ok=True)
