@@ -2,7 +2,7 @@
 
 import math
 from flask import flash
-from cv2 import resize,cvtColor,threshold,blur,adaptiveThreshold,getStructuringElement,morphologyEx,findContours,contourArea,arcLength,approxPolyDP,drawContours,boundingRect,rectangle,getPerspectiveTransform,warpPerspective,imshow,floodFill,Canny,COLOR_BGR2GRAY,THRESH_BINARY,ADAPTIVE_THRESH_MEAN_C,MORPH_RECT,MORPH_ELLIPSE,MORPH_CLOSE,MORPH_OPEN,RETR_EXTERNAL,CHAIN_APPROX_SIMPLE,INTER_NEAREST
+from cv2 import resize,cvtColor,threshold,blur,adaptiveThreshold,getStructuringElement,morphologyEx,findContours,contourArea,arcLength,approxPolyDP,boundingRect,rectangle,getPerspectiveTransform,warpPerspective,floodFill,Canny,COLOR_BGR2GRAY,THRESH_BINARY,ADAPTIVE_THRESH_MEAN_C,MORPH_RECT,MORPH_ELLIPSE,MORPH_CLOSE,MORPH_OPEN,RETR_EXTERNAL,CHAIN_APPROX_SIMPLE,INTER_NEAREST,mean,THRESH_OTSU,BORDER_CONSTANT,copyMakeBorder
 from imutils import resize
 from numpy import zeros,argmin,sort,sum,asarray,copy,ndarray,float32,uint8,where
 from app.utils.constants import template_symbols_dict
@@ -66,7 +66,14 @@ def crop(image):
     copy = image.copy()
     
     # Grayscale and blur the image
-    copy = threshold(copy)
+    copy = cvtColor(copy, COLOR_BGR2GRAY)
+    copy = blur(copy, (5,5))
+    ret,copy = threshold(copy,(int)(mean(copy)[0]*.3),255,THRESH_BINARY+THRESH_OTSU)
+
+    #add a border around the copy, so canny can find a closed shape even when paper touches an edge
+    top, bottom, left, right = [50]*4
+    copy = copyMakeBorder(copy, top, bottom, left, right, BORDER_CONSTANT, value=[0,0,0])
+    image = copyMakeBorder(image, top, bottom, left, right, BORDER_CONSTANT, value=[0,0,0])
 
     # Find edges
     canny = Canny(copy,100,300) # Find all the edges
@@ -88,7 +95,7 @@ def crop(image):
     # Contour returns the four points of the largest contour
     
     # Show contours
-    drawContours(image,[contour], -1, (0, 255, 0), 3) # Draw on original non grayscale image for better visual
+    #drawContours(image,[contour], -1, (0, 255, 0), 3) # Draw on original non grayscale image for better visual
     
     ## Transform Image
     
@@ -118,8 +125,13 @@ def crop(image):
     dst = float32([(0,0), (0,h), (w,h), (w,0)]) # Starts at the origin and goes counterclockwise
     m = getPerspectiveTransform(src, dst) # Gets transformation matrix
     warped = warpPerspective(copy, m, (w, h), flags=INTER_NEAREST)
-
-    return warped
+    
+    #crop edge a little bit to remove edge pieces
+    crop_amount_y = (int)(.01*h)
+    crop_amount_x = (int)(.01*w)
+    cropped = warped[crop_amount_y:h-crop_amount_y,crop_amount_x:w-crop_amount_x]
+    
+    return cropped
 
 # Finds the corners of the paper and matches them to the bounding rectangle
 # Author: Michaela Chen
