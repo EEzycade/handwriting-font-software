@@ -14,5 +14,5 @@ template_symbols_dict = {
                                     ["I","J",None,None]],
     "custom": [["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"],
                ["M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X"],
-               ["Y", None, None, None, None, None, None, None, None, None, None]]
+               ["Y", None, None, None, None, None, None, None, None, None, None, None]]
 }
