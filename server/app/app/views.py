@@ -29,9 +29,6 @@ def process():
     # This route only accepts POST requests
     if request.method == 'POST':
 
-        # Check chosen pipeline
-        pipeline = request.form.get('pipeline_select')
-
         # Check for image in request and retrieve
         # Author: Hans Husurianto
         if 'image' not in request.files:
@@ -73,69 +70,65 @@ def process():
                     image.save(upload_filepath)
                     flash('Image uploaded successfully', 'success')
 
-                    if pipeline == 'main':
-                        # Process Image, clean image
-                        # processed_image_tuple is a tuple (image,ratio)
-                        # Author: Michaela Chen
-                        processed_image_tuple = process_image(
-                            imread(upload_filepath))
-                        clean(app.config['PROCESSED_IMAGES'])
-                        imwrite(os.path.join(
-                            app.config['PROCESSED_IMAGES'], filename), processed_image_tuple[0])
-                        flash('Image processed successfully', 'success')
+                    # Process Image, clean image
+                    # processed_image_tuple is a tuple (image,ratio)
+                    # Author: Michaela Chen
+                    processed_image_tuple = process_image(
+                        imread(upload_filepath))
+                    clean(app.config['PROCESSED_IMAGES'])
+                    imwrite(os.path.join(
+                        app.config['PROCESSED_IMAGES'], filename), processed_image_tuple[0])
+                    flash('Image processed successfully', 'success')
 
-                        # find grid lines. For dev use only, this part is only for debugging purposes
-                        # Author: Braeden Burgard
-                        resized_image = resize_image(processed_image_tuple[0], 200)[0]
-                        processed_image = processed_image_tuple[0]
-                        grid_positions_tuple = detect_gridlines(
-                            resized_image, templateType)
-                        grid_line_image = dev_grid_picture(
-                            resized_image, grid_positions_tuple[0], grid_positions_tuple[1])
-                        clean(app.config['GRID_IMAGES'])
-                        imwrite(os.path.join(
-                            app.config['GRID_IMAGES'], filename), grid_line_image)
-                        flash('Grid line estimate processed successfully', 'success')
+                    # find grid lines. For dev use only, this part is only for debugging purposes
+                    # Author: Braeden Burgard
+                    resized_image = resize_image(processed_image_tuple[0], 200)[0]
+                    processed_image = processed_image_tuple[0]
+                    grid_positions_tuple = detect_gridlines(
+                        resized_image, templateType)
+                    grid_line_image = dev_grid_picture(
+                        resized_image, grid_positions_tuple[0], grid_positions_tuple[1])
+                    clean(app.config['GRID_IMAGES'])
+                    imwrite(os.path.join(
+                        app.config['GRID_IMAGES'], filename), grid_line_image)
+                    flash('Grid line estimate processed successfully', 'success')
 
-                        # cut image. cutImages is a tuple (cut_images, flattened_template)
-                        # cut_images_tuple = cut_image(imread(upload_filepath), processed_image, templateType, processed_image_tuple[1])
-                        cut_images_tuple = cut_image(
-                            processed_image, resized_image, templateType, processed_image_tuple[1])
-                        cut_image_path = os.path.join(
-                            app.config['CUT_IMAGES'], image.filename)
-                        unboxed_image_path = os.path.join(
-                            app.config["UNBOXED_IMAGES"],
-                            os.path.splitext(image.filename)[0]
-                        )
-                        clean(cut_image_path)
-                        clean(unboxed_image_path)
-                        for cutImage, symbol in zip(cut_images_tuple[0], cut_images_tuple[1]):
-                            if symbol != None:
-                                if cutImage.size == 0:
-                                    flash(
-                                        "Grid estimation error, check output", "warning")
-                                else:
-                                    imwrite(os.path.join(cut_image_path, symbol + ".jpg"), cutImage)
-                                    imwrite(os.path.join(unboxed_image_path, symbol + ".jpg"), unbox_image(cutImage))
-                        flash('Image cut successfully', 'success')
+                    # cut image. cutImages is a tuple (cut_images, flattened_template)
+                    # cut_images_tuple = cut_image(imread(upload_filepath), processed_image, templateType, processed_image_tuple[1])
+                    cut_images_tuple = cut_image(
+                        processed_image, resized_image, templateType, processed_image_tuple[1])
+                    cut_image_path = os.path.join(
+                        app.config['CUT_IMAGES'], image.filename)
+                    unboxed_image_path = os.path.join(
+                        app.config["UNBOXED_IMAGES"],
+                        os.path.splitext(image.filename)[0]
+                    )
+                    clean(cut_image_path)
+                    clean(unboxed_image_path)
+                    for cutImage, symbol in zip(cut_images_tuple[0], cut_images_tuple[1]):
+                        if symbol != None:
+                            if cutImage.size == 0:
+                                flash(
+                                    "Grid estimation error, check output", "warning")
+                            else:
+                                imwrite(os.path.join(cut_image_path, symbol + ".jpg"), cutImage)
+                                imwrite(os.path.join(unboxed_image_path, symbol + ".jpg"), unbox_image(cutImage))
+                    flash('Image cut successfully', 'success')
 
-                        # Convert cut images into svgs
-                        # Author: Andrew Bauer
-                        # Convert svgs into a font
-                        # Author: Andrew Silkwood
-                        svg_path = os.path.join(app.config['SVG_IMAGES'], os.path.splitext(image.filename)[0])
-                        clean(svg_path)
-                        gen_font(
-                                unboxed_image_path,
-                                svg_path,
-                                os.path.join(
-                                    app.config['FONTS_FOLDER2'],
-                                    os.path.splitext(image.filename)[0] + ".otf"
-                                )
-                        )
-                    elif pipeline == 'alt':
-                        text = image_to_text(upload_filepath)
-                        flash(text, 'success')
+                    # Convert cut images into svgs
+                    # Author: Andrew Bauer
+                    # Convert svgs into a font
+                    # Author: Andrew Silkwood
+                    svg_path = os.path.join(app.config['SVG_IMAGES'], os.path.splitext(image.filename)[0])
+                    clean(svg_path)
+                    gen_font(
+                            unboxed_image_path,
+                            svg_path,
+                            os.path.join(
+                                app.config['FONTS_FOLDER2'],
+                                os.path.splitext(image.filename)[0] + ".otf"
+                            )
+                    )
 
                     return render_template('public/image_to_font.html', title='Image To Font')
                 else:
@@ -148,8 +141,44 @@ def process():
         flash('Invalid request', 'danger')
         return render_template('public/image_to_font.html', title='Image To Font')
 
+@app.route('/identify_character', methods=['POST'])
+def identify_character():
+    if request.method == 'POST':
+        # check if the post request has the file part
+        if 'image' not in request.files:
+            flash('No image in upload')
+            return redirect(request.url)
+        image = request.files['image']
+        filename = secure_filename(image.filename)
 
-@ app.route('/upload', methods=['GET', 'POST'])
+        # if user does not select file, browser also
+        # submit a empty part without filename
+        if filename == '':
+            flash('No selected image', 'warning')
+            return redirect(request.url)
+
+        if image and allowed_image(image.filename):
+            image.seek(0, os.SEEK_END)
+            size = image.tell()
+            if allowed_image_filesize(size):
+                # Upload Image
+                filename = secure_filename(image.filename)
+                clean(app.config['IMAGE_UPLOADS'])
+                clean(app.config['PROCESSED_IMAGES'])
+                upload_filepath = os.path.join(
+                    app.config['IMAGE_UPLOADS'], filename)
+                image.seek(0)
+                image.save(upload_filepath)
+                text = image_to_text(upload_filepath)
+                return jsonify({"text": text})
+            else:
+                flash('Image size is too large', 'danger')
+                return redirect(request.url)
+        else:
+            flash('Invalid file type', 'danger')
+            return redirect(request.url)
+
+@app.route('/upload', methods=['GET', 'POST'])
 def upload():
     if request.method == 'POST':
 
@@ -185,12 +214,12 @@ def upload():
     return render_template('public/upload.html', title='Upload')
 
 
-@ app.route('/fonts/<path:filename>')
+@app.route('/fonts/<path:filename>')
 def fonts(filename):
     return send_from_directory(app.config['FONTS_FOLDER'], secure_filename(filename), as_attachment=True)
 
 
-@ app.route('/preview')
+@app.route('/preview')
 def preview():
     if request.args:
         if request.args['font']:
