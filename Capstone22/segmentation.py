@@ -3,7 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
-np.set_printoptions(threshold='nan')
+filename = './IMG_0827.png'
+np.set_printoptions(threshold=1)
 
 #------------------Functions------------------#
 
@@ -186,7 +187,7 @@ def letter_seg(lines_img, x_lines, i):
 
 
 print("\n........Program Initiated.......\n")
-src_img= cv2.imread('./data/img_3.jpg', 1)
+src_img= cv2.imread(filename, 1)
 copy = src_img.copy()
 height = src_img.shape[0]
 width = src_img.shape[1]

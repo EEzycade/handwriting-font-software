@@ -16,6 +16,13 @@
                 <form action="/process" method="post" enctype="multipart/form-data">
                     <div class="form-group">
                         <div class="mb-3">
+                            <label for="pipeline_select" class="form-label">Processing Pipeline</label>
+                            <select name="pipeline_select" id="pipeline_select" class="form-control">
+                                <option value="main">Main Pipeline (default)</option>
+                                <option value="alt">Alternate Pipeline</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
                             <label for="template_type" class="form-label">Template Type</label>
                             <select name="template_type" id="template_type" class="form-control">
                                 <option value="english_lower_case_letters">English Lower Case Letters</option>

@@ -8,6 +8,7 @@ from app.utils.photo_manipulation_utils import process_image, detect_gridlines, 
 from app.utils.web_utils import allowed_image, allowed_image_filesize, get_glyph, get_font_list
 from app.utils.constants import template_symbols_dict
 from app.utils.font_generator import gen_font
+from app.utils.alt.imagetotext import image_to_text
 import os
 from cv2 import imwrite, imread
 from shutil import rmtree
@@ -35,6 +36,12 @@ def process():
             return render_template('public/image_to_font.html', title='Image To Font')
         image = request.files['image']
 
+        # Check that image has a filename
+        # Author: Hans Husurianto
+        if image.filename == '':
+            flash('No selected image', 'warning')
+            return render_template('public/image_to_font.html', title='Image To Font')
+
         # Retrieve Template Type
         # Authors: Braeden Burgard & Hans Husurianto
         if 'template_type' not in request.form:
@@ -44,12 +51,6 @@ def process():
             flash('Invalid template type', 'warning')
             return render_template('public/image_to_font.html', title='Image To Font')
         templateType = request.values['template_type']
-
-        # Check that image has a filename
-        # Author: Hans Husurianto
-        if image.filename == '':
-            flash('No selected image', 'warning')
-            return render_template('public/image_to_font.html', title='Image To Font')
 
         if image and allowed_image(image.filename):
             image.seek(0, os.SEEK_END)
@@ -81,8 +82,7 @@ def process():
 
                     # find grid lines. For dev use only, this part is only for debugging purposes
                     # Author: Braeden Burgard
-                    resized_image = resize_image(
-                        processed_image_tuple[0], 200)[0]
+                    resized_image = resize_image(processed_image_tuple[0], 200)[0]
                     processed_image = processed_image_tuple[0]
                     grid_positions_tuple = detect_gridlines(
                         resized_image, templateType)
@@ -141,8 +141,44 @@ def process():
         flash('Invalid request', 'danger')
         return render_template('public/image_to_font.html', title='Image To Font')
 
+@app.route('/identify_character', methods=['POST'])
+def identify_character():
+    if request.method == 'POST':
+        # check if the post request has the file part
+        if 'image' not in request.files:
+            flash('No image in upload')
+            return redirect(request.url)
+        image = request.files['image']
+        filename = secure_filename(image.filename)
 
-@ app.route('/upload', methods=['GET', 'POST'])
+        # if user does not select file, browser also
+        # submit a empty part without filename
+        if filename == '':
+            flash('No selected image', 'warning')
+            return redirect(request.url)
+
+        if image and allowed_image(image.filename):
+            image.seek(0, os.SEEK_END)
+            size = image.tell()
+            if allowed_image_filesize(size):
+                # Upload Image
+                filename = secure_filename(image.filename)
+                clean(app.config['IMAGE_UPLOADS'])
+                clean(app.config['PROCESSED_IMAGES'])
+                upload_filepath = os.path.join(
+                    app.config['IMAGE_UPLOADS'], filename)
+                image.seek(0)
+                image.save(upload_filepath)
+                text = image_to_text(upload_filepath)
+                return jsonify({"text": text})
+            else:
+                flash('Image size is too large', 'danger')
+                return redirect(request.url)
+        else:
+            flash('Invalid file type', 'danger')
+            return redirect(request.url)
+
+@app.route('/upload', methods=['GET', 'POST'])
 def upload():
     if request.method == 'POST':
 
@@ -178,12 +214,12 @@ def upload():
     return render_template('public/upload.html', title='Upload')
 
 
-@ app.route('/fonts/<path:filename>')
+@app.route('/fonts/<path:filename>')
 def fonts(filename):
     return send_from_directory(app.config['FONTS_FOLDER'], secure_filename(filename), as_attachment=True)
 
 
-@ app.route('/preview')
+@app.route('/preview')
 def preview():
     if request.args:
         if request.args['font']:

@@ -3,7 +3,7 @@
 import math
 from flask import flash
 from cv2 import resize,cvtColor,threshold,blur,adaptiveThreshold,getStructuringElement,morphologyEx,findContours,contourArea,arcLength,approxPolyDP,boundingRect,rectangle,getPerspectiveTransform,warpPerspective,floodFill,Canny,COLOR_BGR2GRAY,THRESH_BINARY,ADAPTIVE_THRESH_MEAN_C,MORPH_RECT,MORPH_ELLIPSE,MORPH_CLOSE,MORPH_OPEN,RETR_EXTERNAL,CHAIN_APPROX_SIMPLE,INTER_NEAREST,mean,THRESH_OTSU,BORDER_CONSTANT,copyMakeBorder
-from imutils import resize
+#from imutils import resize as imutils_resize
 from numpy import zeros,argmin,sort,sum,asarray,copy,ndarray,float32,uint8,where
 from app.utils.constants import template_symbols_dict
 
@@ -33,7 +33,7 @@ def process_image(image):
 
 # Turns the original image to b/w (mostly removes shadows) and removes some noise
 # Author: Michaela Chen
-def threshold(image):
+def threshold_image(image):
     # Convert to grayscale, blur to reduce noise, and threshold
     gray = cvtColor(image, COLOR_BGR2GRAY)
     blurred = blur(gray, (3,3))
