@@ -10,7 +10,8 @@ from app.utils.web_utils import allowed_image, allowed_image_filesize, get_glyph
 from app.utils.constants import template_symbols_dict
 # from app.utils.font_generator import gen_font
 from bmark import font
-from app.utils.alt.imagetotext import image_to_text
+# from app.utils.alt.imagetotext import image_to_text
+from bmark.ml import image_to_text
 import os
 from cv2 import imwrite, imread
 from shutil import rmtree
