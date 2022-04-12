@@ -4,10 +4,12 @@ from flask import Flask, render_template, request, redirect, url_for, flash, jso
 from datetime import datetime
 from werkzeug.utils import secure_filename
 from app.utils.security import requires_auth
-from app.utils.photo_manipulation_utils import process_image, detect_gridlines, dev_grid_picture, cut_image, resize_image, unbox_image
+#from app.utils.photo_manipulation_utils import process_image, detect_gridlines, dev_grid_picture, cut_image, resize_image, unbox_image
+from bmark.image import process_image, detect_gridlines, dev_grid_picture, cut_image, resize_image, unbox_image
 from app.utils.web_utils import allowed_image, allowed_image_filesize, get_glyph, get_font_list
 from app.utils.constants import template_symbols_dict
-from app.utils.font_generator import gen_font
+# from app.utils.font_generator import gen_font
+from bmark import font
 from app.utils.alt.imagetotext import image_to_text
 import os
 from cv2 import imwrite, imread
@@ -50,7 +52,7 @@ def process():
         elif request.form['template_type'] not in template_symbols_dict:
             flash('Invalid template type', 'warning')
             return render_template('public/image_to_font.html', title='Image To Font')
-        templateType = request.values['template_type']
+        template  = template_symbols_dict[request.values['template_type']]
 
         if image and allowed_image(image.filename):
             image.seek(0, os.SEEK_END)
@@ -85,7 +87,7 @@ def process():
                     resized_image = resize_image(processed_image_tuple[0], 200)[0]
                     processed_image = processed_image_tuple[0]
                     grid_positions_tuple = detect_gridlines(
-                        resized_image, templateType)
+                        resized_image, template)
                     grid_line_image = dev_grid_picture(
                         resized_image, grid_positions_tuple[0], grid_positions_tuple[1])
                     clean(app.config['GRID_IMAGES'])
@@ -94,9 +96,8 @@ def process():
                     flash('Grid line estimate processed successfully', 'success')
 
                     # cut image. cutImages is a tuple (cut_images, flattened_template)
-                    # cut_images_tuple = cut_image(imread(upload_filepath), processed_image, templateType, processed_image_tuple[1])
                     cut_images_tuple = cut_image(
-                        processed_image, resized_image, templateType, processed_image_tuple[1])
+                        processed_image, resized_image, template, processed_image_tuple[1])
                     cut_image_path = os.path.join(
                         app.config['CUT_IMAGES'], image.filename)
                     unboxed_image_path = os.path.join(
@@ -121,7 +122,7 @@ def process():
                     # Author: Andrew Silkwood
                     svg_path = os.path.join(app.config['SVG_IMAGES'], os.path.splitext(image.filename)[0])
                     clean(svg_path)
-                    gen_font(
+                    font.create(
                             unboxed_image_path,
                             svg_path,
                             os.path.join(
