@@ -3,6 +3,7 @@ class Config(object):
     TESTING = False
     SECRET_KEY = "a84ckkPu1reWiMFURW7oaA"
     API_KEY = "254edfd6687a17117e5cfabe6e190cfa"
+    IP = "127.0.0.1"
 
     IMAGE_UPLOADS = "./app/uploads/"
     PROCESSED_IMAGES = "./app/processed_images"
@@ -18,18 +19,13 @@ class Config(object):
 
     SESSION_COOKIE_SECURE = True
 
-
 class ProductionConfig(Config):
     pass
 
-
 class DevelopmentConfig(Config):
     DEBUG = True
-
     SESSION_COOKIE_STORE = False
-
 
 class TestingConfig(Config):
     TESTING = True
-
     SESSION_COOKIE_STORE = False
