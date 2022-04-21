@@ -24,3 +24,4 @@ threadpoolctl==3.1.0
 toml==0.10.2
 tqdm==4.63.0
 Werkzeug==2.0.2
+https://github.com/EEzycade/font-software-data/archive/master.zip#egg-info=bookmarked-utils
