@@ -4,17 +4,12 @@ from flask import Flask, render_template, request, redirect, url_for, flash, jso
 from datetime import datetime
 from werkzeug.utils import secure_filename
 from app.utils.security import requires_auth, devEnvironment
-from app.utils.security import requires_auth
-from bmark.image import process_image, detect_gridlines, dev_grid_picture, cut_image, resize_image, unbox_image
 from app.utils.web_utils import allowed_image, allowed_image_filesize, get_glyph, get_font_list
 from app.utils.constants import template_symbols_dict
-# from app.utils.font_generator import gen_font
-from bmark import font
-# from app.utils.alt.imagetotext import image_to_text
-from bmark.ml import image_to_text
 import os
 from cv2 import imwrite, imread
 from shutil import rmtree
+import bmark
 
 @app.route('/', methods=['GET'])
 @devEnvironment
@@ -59,7 +54,7 @@ def process():
         elif request.form['template_type'] not in template_symbols_dict:
             flash('Invalid template type', 'warning')
             return render_template('public/image_to_font.html', title='Image To Font')
-        template  = template_symbols_dict[request.values['template_type']]
+        template = template_symbols_dict[request.values['template_type']]
 
         if image and allowed_image(image.filename):
             image.seek(0, os.SEEK_END)
@@ -82,7 +77,7 @@ def process():
                     # Process Image, clean image
                     # processed_image_tuple is a tuple (image,ratio)
                     # Author: Michaela Chen
-                    processed_image_tuple = process_image(
+                    processed_image_tuple = bmark.image.process(
                         imread(upload_filepath))
                     clean(app.config['PROCESSED_IMAGES'])
                     imwrite(os.path.join(
@@ -91,11 +86,11 @@ def process():
 
                     # find grid lines. For dev use only, this part is only for debugging purposes
                     # Author: Braeden Burgard
-                    resized_image = resize_image(processed_image_tuple[0], 200)[0]
+                    resized_image = bmark.image.resize(processed_image_tuple[0], 200)[0]
                     processed_image = processed_image_tuple[0]
-                    grid_positions_tuple = detect_gridlines(
+                    grid_positions_tuple = bmark.image.detect_gridlines(
                         resized_image, template)
-                    grid_line_image = dev_grid_picture(
+                    grid_line_image = bmark.image.dev_grid_picture(
                         resized_image, grid_positions_tuple[0], grid_positions_tuple[1])
                     clean(app.config['GRID_IMAGES'])
                     imwrite(os.path.join(
@@ -103,7 +98,7 @@ def process():
                     flash('Grid line estimate processed successfully', 'success')
 
                     # cut image. cutImages is a tuple (cut_images, flattened_template)
-                    cut_images_tuple = cut_image(
+                    cut_images_tuple = bmark.image.cut_image(
                         processed_image, resized_image, template, processed_image_tuple[1])
                     cut_image_path = os.path.join(
                         app.config['CUT_IMAGES'], image.filename)
@@ -120,7 +115,7 @@ def process():
                                     "Grid estimation error, check output", "warning")
                             else:
                                 imwrite(os.path.join(cut_image_path, symbol + ".jpg"), cutImage)
-                                imwrite(os.path.join(unboxed_image_path, symbol + ".jpg"), unbox_image(cutImage))
+                                imwrite(os.path.join(unboxed_image_path, symbol + ".jpg"), bmark.image.unbox(cutImage))
                     flash('Image cut successfully', 'success')
 
                     # Convert cut images into svgs
@@ -129,7 +124,7 @@ def process():
                     # Author: Andrew Silkwood
                     svg_path = os.path.join(app.config['SVG_IMAGES'], os.path.splitext(image.filename)[0])
                     clean(svg_path)
-                    font.create(
+                    bmark.font.create(
                             unboxed_image_path,
                             svg_path,
                             os.path.join(
@@ -199,7 +194,7 @@ def process():
     # Process Image, clean image
     # processed_image_tuple is a tuple (image,ratio)
     # Author: Michaela Chen
-    processed_image_tuple = process_image(imread(upload_filepath)) 
+    processed_image_tuple = bmark.image.process(imread(upload_filepath))
     clean(app.config['PROCESSED_IMAGES'])
     imwrite(os.path.join(
         app.config['PROCESSED_IMAGES'], filename), processed_image_tuple[0])
@@ -208,11 +203,11 @@ def process():
     # Find grid lines. For dev use only, this part is only for debugging purposes
     # Author: Braeden Burgard
     if app.config["DEBUG"]:
-        resized_image = resize_image(processed_image_tuple[0], 200)[0]
+        resized_image = bmark.image.resize(processed_image_tuple[0], 200)[0]
         processed_image = processed_image_tuple[0]
-        grid_positions_tuple = detect_gridlines(
+        grid_positions_tuple = bmark.image.detect_gridlines(
             resized_image, templateType)
-        grid_line_image = dev_grid_picture(
+        grid_line_image = bmark.image.dev_grid_picture(
             resized_image, grid_positions_tuple[0], grid_positions_tuple[1])
         clean(app.config['GRID_IMAGES'])
         imwrite(os.path.join(
@@ -237,7 +232,7 @@ def process():
                 flash("Grid estimation error, check output", "warning")
             else:
                 imwrite(os.path.join(cut_image_path, symbol + ".jpg"), cutImage)
-                imwrite(os.path.join(unboxed_image_path, symbol + ".jpg"), unbox_image(cutImage))
+                imwrite(os.path.join(unboxed_image_path, symbol + ".jpg"), bmark.image.unbox(cutImage))
     flash('Image cut successfully', 'success')
 
     # Convert cut images into svgs
@@ -302,7 +297,7 @@ def identify_character():
     image.save(upload_filepath)
 
     # Identify character
-    text = image_to_text(upload_filepath)
+    text = bmark.ml.image_to_text(upload_filepath)
     return Response("{'message':'Successfully identified character','character':'"+ text +"'}", status=200)
 
 @app.route('/font/<path:filename>')
