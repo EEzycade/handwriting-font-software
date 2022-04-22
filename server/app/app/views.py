@@ -224,6 +224,10 @@ def font(filename):
         filename += '.otf'
     return send_from_directory(app.config['FONTS_FOLDER'], secure_filename(filename), as_attachment=True)
 
+@app.route('/base-fonts', methods=['GET'])
+def base_font_list():
+    return jsonify(web_utils.base_font_list())
+
 @app.route('/preview')
 @devEnvironment
 def preview():
