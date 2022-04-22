@@ -45,3 +45,13 @@ def get_font_list():
     """
     return os.listdir('./app/' + app.config['FONTS_FOLDER'])
 app.jinja_env.globals.update(get_font_list=get_font_list)
+
+def base_font_list() -> list[str]:
+    """
+    Description: List available base fonts
+    Author: Andrew Bauer
+
+    @return: List of the font names available
+    """
+    return os.listdir(app.config["FONTS_FOLDER3"])
+

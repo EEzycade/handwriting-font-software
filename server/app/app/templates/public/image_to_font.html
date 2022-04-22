@@ -23,6 +23,14 @@
                                 <option value="custom">Custom</option>
                             </select>
                         </div>
+                        <div class="mb-3">
+                            <label for="base_font" class="form-label">Base Font (to use for missing characters)</label>
+                            <select name="base_font" id="base_font" class="form-control">
+                                {% for base_font in base_fonts %}
+                                    <option value="{{base_font}}">{{base_font}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
                         <div class="custom-file">
                             <input type="file" class="form-control-file" id="image" name="image" onchange="setFileName(this.value);" accept=".png,.jpg,.jpeg">
                             <label for="image" class="custom-file-label">Select an image</label>

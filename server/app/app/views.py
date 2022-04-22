@@ -5,6 +5,7 @@ from datetime import datetime
 from werkzeug.utils import secure_filename
 from app.utils.security import requires_auth, devEnvironment
 from app.utils.web_utils import allowed_image, allowed_image_filesize, get_glyph, get_font_list
+from app.utils import web_utils
 from app.utils.constants import template_symbols_dict
 import os
 from cv2 import imwrite, imread
@@ -18,7 +19,10 @@ def index():
     Summary: Homepage in the dev backend testing environment.
     Author: Hans Husurianto
     """
-    return render_template('public/image_to_font.html', title='Image To Font')
+    return render_template('public/image_to_font.html',
+                           title='Image To Font',
+                           base_fonts=web_utils.base_font_list(),
+    )
 
 # Route to process an image
 # Author: Hans Husurianto, Braeden Burgard
@@ -60,6 +64,18 @@ def process():
     elif 'template_type' in request.form:
         templateType = request.form['template_type']
     template = template_symbols_dict[templateType]
+
+    # Retrieve Base Font
+    # Author: Andrew Bauer
+    base_font = secure_filename(
+            request.form.get("base_font", app.config['DEFAULT_BASE_FONT'])
+    )
+    if os.path.exists(os.path.join(app.config["FONTS_FOLDER3"], base_font)):
+        print(f"Using '{base_font}' for missing characters.")
+    else:
+        flash(f'The base font \'{request.form["base_font"]}\' does not exist. Using the default base font \'{base_font}\' instead.', 'warning')
+        print(f'The base font \'{request.form["base_font"]}\' does not exist. Using the default base font \'{base_font}\' instead.')
+        base_font = app.config['DEFAULT_BASE_FONT']
 
     # Check that the image has an appropriate name
     # Author: Hans Husurianto
@@ -133,15 +149,15 @@ def process():
     # Convert SVGs into a font
     # Author: Andrew Silkwood
     svg_path = os.path.join(app.config['SVG_IMAGES'], fontname)
+    font_path = os.path.join(app.config['FONTS_FOLDER2'], fontname + ".otf")
     clean(svg_path)
-    bmark.font.create(
-            unboxed_image_path,
-            svg_path,
-            os.path.join(
-                app.config['FONTS_FOLDER2'],
-                fontname + ".otf"
-            )
-    )
+    bmark.font.create(unboxed_image_path, svg_path, font_path)
+
+    # Pull missing characters from a base font
+    # Author: Andrew Bauer
+    base_font_path = os.path.join(app.config['FONTS_FOLDER3'], base_font)
+    assert os.path.exists(base_font_path)
+    bmark.font.merge_font(font_path, base_font_path, output_file=font_path)
 
     return Response("{'message':'Successfully converted image to font','filename':'"+ fontname + ".otf" +"'}", status=201)
 
