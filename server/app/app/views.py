@@ -230,6 +230,19 @@ def base_font_list():
 def template_dict():
     return jsonify(web_utils.template_dict())
 
+@app.route('/render-template/<path:template_name>')
+def create_template(template_name):
+    template_name = secure_filename(template_name)
+    if not os.path.exists(os.path.join(app.config["TEMPLATES_FOLDER"], template_name)):
+        print(f"Template '{template_name}' not found.")
+        abort(400, f"Template '{template_name}' not found.")
+    template = web_utils.load_template(template_name)
+    height = len(template)
+    width = len(template[0]) if template else 0
+    image = bmark.template.create(width*height, 50, 5)
+    image.save(os.path.join("app", app.config["TEMPLATE_IMAGES_FOLDER"], template_name + ".png"))
+    return send_from_directory(app.config["TEMPLATE_IMAGES_FOLDER"], template_name + ".png", as_attachment=True)
+
 @app.route('/preview')
 @devEnvironment
 def preview():
