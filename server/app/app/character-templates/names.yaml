@@ -1,0 +1,5 @@
+english_upper_case_letters.csv: English Uppercase Letters
+english_lower_case_letters.csv: English Lowercase Letters
+custom.csv: Custom
+english_upperlower.csv: English Letters Uppercase and Lowercase
+english_upper_lower_numbers.csv: Numbers and English Letters (Uppercase and Lowercase)

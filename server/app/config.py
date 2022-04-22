@@ -14,6 +14,7 @@ class Config(object):
     FONTS_FOLDER = "./fonts"
     FONTS_FOLDER2 = "./app/fonts"
     FONTS_FOLDER3 = "./app/base_fonts"
+    TEMPLATES_FOLDER = "./app/character-templates"
 
     DEFAULT_BASE_FONT = "ComicSans.ttf"
 

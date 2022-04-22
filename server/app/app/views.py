@@ -6,7 +6,6 @@ from werkzeug.utils import secure_filename
 from app.utils.security import requires_auth, devEnvironment
 from app.utils.web_utils import allowed_image, allowed_image_filesize, get_glyph, get_font_list
 from app.utils import web_utils
-from app.utils.constants import template_symbols_dict
 import os
 from cv2 import imwrite, imread
 from shutil import rmtree
@@ -22,6 +21,7 @@ def index():
     return render_template('public/image_to_font.html',
                            title='Image To Font',
                            base_fonts=web_utils.base_font_list(),
+                           templates=web_utils.template_dict(),
     )
 
 # Route to process an image
@@ -57,13 +57,11 @@ def process():
 
     # Retrieve Template Type
     # Authors: Braeden Burgard & Hans Husurianto
-    templateType = "english_lower_case_letters"
-    if 'template_type' in request.form and request.form['template_type'] not in template_symbols_dict:
+    templateType = secure_filename(request.form.get('template_type', "english_lower_case_letters"))
+    if templateType not in web_utils.template_dict():
         flash('Invalid template type', 'warning')
-        abort(400, "Invalid template type: %s" % request.form['template_type'])
-    elif 'template_type' in request.form:
-        templateType = request.form['template_type']
-    template = template_symbols_dict[templateType]
+        abort(400, "Invalid template type: %s" % templateType)
+    template = web_utils.load_template(templateType)
 
     # Retrieve Base Font
     # Author: Andrew Bauer
@@ -227,6 +225,10 @@ def font(filename):
 @app.route('/base-fonts', methods=['GET'])
 def base_font_list():
     return jsonify(web_utils.base_font_list())
+
+@app.route('/templates', methods=['GET'])
+def template_dict():
+    return jsonify(web_utils.template_dict())
 
 @app.route('/preview')
 @devEnvironment
