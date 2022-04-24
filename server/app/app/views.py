@@ -4,7 +4,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, jso
 from datetime import datetime
 from werkzeug.utils import secure_filename
 from app.utils.security import requires_auth
-from app.utils.photo_manipulation_utils import process_image, detect_gridlines, dev_grid_picture, cut_image, resize_image, unbox_image
+from app.utils.photo_manipulation_utils import process_image, detect_gridlines, dev_grid_picture, cut_image, resize_image, unbox_image, crop
 from app.utils.web_utils import allowed_image, allowed_image_filesize, get_glyph, get_font_list
 from app.utils.constants import template_symbols_dict
 from app.utils.font_generator import gen_font
@@ -43,7 +43,8 @@ def process():
         elif request.form['template_type'] not in template_symbols_dict:
             flash('Invalid template type', 'warning')
             return render_template('public/image_to_font.html', title='Image To Font')
-        templateType = request.values['template_type']
+        template_type = request.values['template_type']
+        template = template_symbols_dict[template_type]
 
         # Check that image has a filename
         # Author: Hans Husurianto
@@ -69,47 +70,56 @@ def process():
                     image.save(upload_filepath)
                     flash('Image uploaded successfully', 'success')
 
+                     # Upload Image
+                    clean(app.config['IMAGE_UPLOADS']) # Clean up old images
+                    clean(app.config['PROCESSED_IMAGES']) # Clean up old images
+                    upload_filepath = os.path.join(
+                        app.config['IMAGE_UPLOADS'], filename) # Get upload filepath
+                    image.seek(0) # Reset file pointer
+                    image.save(upload_filepath) # Save image to filepath
+                    flash('Image uploaded successfully', 'success')
+
                     # Process Image, clean image
-                    # processed_image_tuple is a tuple (image,ratio)
-                    # Author: Michaela Chen
-                    processed_image_tuple = process_image(
-                        imread(upload_filepath))
+                    # Author: Michaela Chen, Braeden Burgard
+                    cropped_image = crop(imread(upload_filepath))
+                    clean(app.config['CROPPED_IMAGES'])
+                    imwrite(os.path.join(
+                        app.config['CROPPED_IMAGES'], filename), cropped_image)
+                    processed_image = process_image(cropped_image, 500) 
                     clean(app.config['PROCESSED_IMAGES'])
                     imwrite(os.path.join(
-                        app.config['PROCESSED_IMAGES'], filename), processed_image_tuple[0])
+                        app.config['PROCESSED_IMAGES'], filename), processed_image)
                     flash('Image processed successfully', 'success')
 
-                    # find grid lines. For dev use only, this part is only for debugging purposes
+                    # Find grid lines. For dev use only, this part is only for debugging purposes
                     # Author: Braeden Burgard
-                    resized_image = resize_image(
-                        processed_image_tuple[0], 200)[0]
-                    processed_image = processed_image_tuple[0]
-                    grid_positions_tuple = detect_gridlines(
-                        resized_image, templateType)
-                    grid_line_image = dev_grid_picture(
-                        resized_image, grid_positions_tuple[0], grid_positions_tuple[1])
-                    clean(app.config['GRID_IMAGES'])
-                    imwrite(os.path.join(
-                        app.config['GRID_IMAGES'], filename), grid_line_image)
-                    flash('Grid line estimate processed successfully', 'success')
+                    if app.config["DEBUG"]:
+                        [horizontal_lines, vertical_lines, score] = detect_gridlines(
+                            processed_image, template)
+                        print("***** Gridline score: ", score, " *****")
+                        grid_line_image = dev_grid_picture(
+                            processed_image, horizontal_lines, vertical_lines)
+                        clean(app.config['GRID_IMAGES'])
+                        imwrite(os.path.join(
+                            app.config['GRID_IMAGES'], filename), grid_line_image)
+                        flash('Grid line estimate processed successfully', 'success')
 
-                    # cut image. cutImages is a tuple (cut_images, flattened_template)
-                    # cut_images_tuple = cut_image(imread(upload_filepath), processed_image, templateType, processed_image_tuple[1])
-                    cut_images_tuple = cut_image(
-                        processed_image, resized_image, templateType, processed_image_tuple[1])
+                    # Cut image. cutImages is a tuple (cut_images, flattened_template)
+                    cuttable_image = process_image(cropped_image, 1500) 
+                    [cut_images, flattened_template] = cut_image(
+                        cuttable_image, processed_image, template)
                     cut_image_path = os.path.join(
-                        app.config['CUT_IMAGES'], image.filename)
+                        app.config['CUT_IMAGES'], filename)
                     unboxed_image_path = os.path.join(
                         app.config["UNBOXED_IMAGES"],
-                        os.path.splitext(image.filename)[0]
+                        filename
                     )
                     clean(cut_image_path)
                     clean(unboxed_image_path)
-                    for cutImage, symbol in zip(cut_images_tuple[0], cut_images_tuple[1]):
+                    for cutImage, symbol in zip(cut_images, flattened_template):
                         if symbol != None:
                             if cutImage.size == 0:
-                                flash(
-                                    "Grid estimation error, check output", "warning")
+                                flash("Grid estimation error, check output", "warning")
                             else:
                                 imwrite(os.path.join(cut_image_path, symbol + ".jpg"), cutImage)
                                 imwrite(os.path.join(unboxed_image_path, symbol + ".jpg"), unbox_image(cutImage))
