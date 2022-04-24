@@ -1,11 +1,11 @@
 from flask.helpers import send_from_directory
 from app import app
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, abort, Response
-from datetime import datetime
 from werkzeug.utils import secure_filename
 from app.utils.security import requires_auth, devEnvironment
 from app.utils.web_utils import allowed_image, allowed_image_filesize, get_glyph, get_font_list
 from app.utils.constants import template_symbols_dict
+from uuid import uuid4
 import os
 from cv2 import imwrite, imread
 from shutil import rmtree
@@ -44,12 +44,13 @@ def process():
     # Get the image and image details
     image = request.files['image']
     filename = secure_filename(image.filename)
-    fontname = os.path.splitext(filename)[0]
+    fontname, ext = os.path.splitext(filename)
 
     # Check that the image has a filename
     if filename == '':
         flash('No selected image', 'warning')
         abort(400, "No selected image")
+    internal_name = f"{fontname}-{uuid4().hex}"
 
     # Retrieve Template Type
     # Authors: Braeden Burgard & Hans Husurianto
@@ -79,7 +80,7 @@ def process():
     clean(app.config['IMAGE_UPLOADS']) # Clean up old images
     clean(app.config['PROCESSED_IMAGES']) # Clean up old images
     upload_filepath = os.path.join(
-        app.config['IMAGE_UPLOADS'], filename) # Get upload filepath
+        app.config['IMAGE_UPLOADS'], internal_name + ext) # Get upload filepath
     image.seek(0) # Reset file pointer
     image.save(upload_filepath) # Save image to filepath
     flash('Image uploaded successfully', 'success')
@@ -90,7 +91,7 @@ def process():
     processed_image_tuple = bmark.image.process(imread(upload_filepath))
     clean(app.config['PROCESSED_IMAGES'])
     imwrite(os.path.join(
-        app.config['PROCESSED_IMAGES'], filename), processed_image_tuple[0])
+        app.config['PROCESSED_IMAGES'], internal_name + ext), processed_image_tuple[0])
     flash('Image processed successfully', 'success')
 
     # Find grid lines. For dev use only, this part is only for debugging purposes
@@ -104,7 +105,7 @@ def process():
             resized_image, grid_positions_tuple[0], grid_positions_tuple[1])
         clean(app.config['GRID_IMAGES'])
         imwrite(os.path.join(
-            app.config['GRID_IMAGES'], filename), grid_line_image)
+            app.config['GRID_IMAGES'], internal_name + ext), grid_line_image)
         flash('Grid line estimate processed successfully', 'success')
 
     # Cut image. cutImages is a tuple (cut_images, flattened_template)
@@ -112,10 +113,10 @@ def process():
     cut_images_tuple = bmark.image.cut(
         processed_image, resized_image, template, processed_image_tuple[1])
     cut_image_path = os.path.join(
-        app.config['CUT_IMAGES'], filename)
+        app.config['CUT_IMAGES'], internal_name)
     unboxed_image_path = os.path.join(
         app.config["UNBOXED_IMAGES"],
-        fontname
+        internal_name
     )
     clean(cut_image_path)
     clean(unboxed_image_path)
@@ -132,18 +133,16 @@ def process():
     # Author: Andrew Bauer
     # Convert SVGs into a font
     # Author: Andrew Silkwood
-    svg_path = os.path.join(app.config['SVG_IMAGES'], fontname)
+    svg_path = os.path.join(app.config['SVG_IMAGES'], internal_name)
+    font_path = os.path.join(app.config['FONTS_FOLDER2'], internal_name + ".otf")
     clean(svg_path)
     bmark.font.create(
             unboxed_image_path,
             svg_path,
-            os.path.join(
-                app.config['FONTS_FOLDER2'],
-                fontname + ".otf"
-            )
+            font_path,
     )
 
-    return Response("{'message':'Successfully converted image to font','filename':'"+ fontname + ".otf" +"'}", status=201)
+    return Response("{'message':'Successfully converted image to font','filename':'"+ internal_name + ".otf" +"'}", status=201)
 
 @app.route('/identify_character', methods=['POST'])
 @requires_auth
