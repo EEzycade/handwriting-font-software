@@ -1,11 +1,11 @@
 from flask.helpers import send_from_directory
 from app import app
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, abort, Response
-from datetime import datetime
 from werkzeug.utils import secure_filename
 from app.utils.security import requires_auth, devEnvironment
 from app.utils.web_utils import allowed_image, allowed_image_filesize, get_glyph, get_font_list
 from app.utils import web_utils
+from uuid import uuid4
 import os
 from cv2 import imwrite, imread
 from shutil import rmtree
@@ -48,12 +48,13 @@ def process():
     # Get the image and image details
     image = request.files['image']
     filename = secure_filename(image.filename)
-    fontname = os.path.splitext(filename)[0]
+    fontname, ext = os.path.splitext(filename)
 
     # Check that the image has a filename
     if filename == '':
         flash('No selected image', 'warning')
         abort(400, "No selected image")
+    internal_name = f"{fontname}-{uuid4().hex}"
 
     # Retrieve Template Type
     # Authors: Braeden Burgard & Hans Husurianto
@@ -93,47 +94,50 @@ def process():
     clean(app.config['IMAGE_UPLOADS']) # Clean up old images
     clean(app.config['PROCESSED_IMAGES']) # Clean up old images
     upload_filepath = os.path.join(
-        app.config['IMAGE_UPLOADS'], filename) # Get upload filepath
+        app.config['IMAGE_UPLOADS'], internal_name + ext) # Get upload filepath
     image.seek(0) # Reset file pointer
     image.save(upload_filepath) # Save image to filepath
     flash('Image uploaded successfully', 'success')
 
     # Process Image, clean image
     # processed_image_tuple is a tuple (image,ratio)
-    # Author: Michaela Chen
-    processed_image_tuple = bmark.image.process(imread(upload_filepath))
+    # Author: Michaela Chen, Braeden Burgard
+    cropped_image = bmark.image.crop(imread(upload_filepath))
+    clean(app.config['CROPPED_IMAGES'])
+    imwrite(os.path.join(
+        app.config['CROPPED_IMAGES'], internal_name + ext), cropped_image)
+    processed_image = bmark.image.process(cropped_image, 300) 
     clean(app.config['PROCESSED_IMAGES'])
     imwrite(os.path.join(
-        app.config['PROCESSED_IMAGES'], filename), processed_image_tuple[0])
+        app.config['PROCESSED_IMAGES'], internal_name + ext), processed_image)
     flash('Image processed successfully', 'success')
 
     # Find grid lines. For dev use only, this part is only for debugging purposes
     # Author: Braeden Burgard
     if app.config["DEBUG"]:
-        resized_image = bmark.image.resize(processed_image_tuple[0], 200)[0]
-        processed_image = processed_image_tuple[0]
-        grid_positions_tuple = bmark.image.detect_gridlines(
-            resized_image, template)
+        [horizontal_lines, vertical_lines, score] = bmark.image.detect_gridlines(
+            processed_image, template)
         grid_line_image = bmark.image.dev_grid_picture(
-            resized_image, grid_positions_tuple[0], grid_positions_tuple[1])
+            processed_image, horizontal_lines, vertical_lines)
         clean(app.config['GRID_IMAGES'])
         imwrite(os.path.join(
-            app.config['GRID_IMAGES'], filename), grid_line_image)
+            app.config['GRID_IMAGES'], internal_name + ext), grid_line_image)
         flash('Grid line estimate processed successfully', 'success')
 
     # Cut image. cutImages is a tuple (cut_images, flattened_template)
     # cut_images_tuple = cut_image(imread(upload_filepath), processed_image, templateType, processed_image_tuple[1])
-    cut_images_tuple = bmark.image.cut(
-        processed_image, resized_image, template, processed_image_tuple[1])
+    cuttable_image = bmark.image.process(cropped_image, 1500) 
+    [cut_images, flattened_template] = bmark.image.cut(
+        cuttable_image, processed_image, template)
     cut_image_path = os.path.join(
-        app.config['CUT_IMAGES'], filename)
+        app.config['CUT_IMAGES'], internal_name)
     unboxed_image_path = os.path.join(
         app.config["UNBOXED_IMAGES"],
-        fontname
+        internal_name
     )
     clean(cut_image_path)
     clean(unboxed_image_path)
-    for cutImage, symbol in zip(cut_images_tuple[0], cut_images_tuple[1]):
+    for cutImage, symbol in zip(cut_images, flattened_template):
         if symbol != None:
             if cutImage.size == 0:
                 flash("Grid estimation error, check output", "warning")
@@ -146,8 +150,8 @@ def process():
     # Author: Andrew Bauer
     # Convert SVGs into a font
     # Author: Andrew Silkwood
-    svg_path = os.path.join(app.config['SVG_IMAGES'], fontname)
-    font_path = os.path.join(app.config['FONTS_FOLDER2'], fontname + ".otf")
+    svg_path = os.path.join(app.config['SVG_IMAGES'], internal_name)
+    font_path = os.path.join(app.config['FONTS_FOLDER2'], internal_name + ".otf")
     clean(svg_path)
     bmark.font.create(unboxed_image_path, svg_path, font_path)
 
@@ -157,7 +161,7 @@ def process():
     assert os.path.exists(base_font_path)
     bmark.font.merge_font(font_path, base_font_path, output_file=font_path)
 
-    return Response("{'message':'Successfully converted image to font','filename':'"+ fontname + ".otf" +"'}", status=201)
+    return Response("{'message':'Successfully converted image to font','filename':'"+ internal_name + ".otf" +"'}", status=201)
 
 @app.route('/identify_character', methods=['POST'])
 @requires_auth
