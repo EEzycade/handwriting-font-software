@@ -18,9 +18,17 @@
                         <div class="mb-3">
                             <label for="template_type" class="form-label">Template Type</label>
                             <select name="template_type" id="template_type" class="form-control">
-                                <option value="english_lower_case_letters">English Lower Case Letters</option>
-                                <option value="english_upper_case_letters">English Upper Case Letters</option>
-                                <option value="custom">Custom</option>
+                                {% for template_file, template_name in templates.items() %}
+                                    <option value="{{template_file}}">{{template_name}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="base_font" class="form-label">Base Font (to use for missing characters)</label>
+                            <select name="base_font" id="base_font" class="form-control">
+                                {% for base_font in base_fonts %}
+                                    <option value="{{base_font}}">{{base_font}}</option>
+                                {% endfor %}
                             </select>
                         </div>
                         <div class="custom-file">

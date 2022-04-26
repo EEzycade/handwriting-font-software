@@ -5,14 +5,3 @@ glyphs = [
     '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '-', '_', '=', '+', '{', '[', '}', ']', '|', ':', ';', '"', '\'', '<', ',', '>', '.', '?', '/', '\\', '~', '`'
 ]
 
-template_symbols_dict = {
-    "english_lower_case_letters": [["a","b","c","d"],
-                                  ["e","f","g","h"],
-                                  ["i","j",None,None]],
-    "english_upper_case_letters": [["A","B","C","D"],
-                                    ["E","F","G","H"],
-                                    ["I","J",None,None]],
-    "custom": [["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"],
-               ["M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X"],
-               ["Y", None, None, None, None, None, None, None, None, None, None, None]]
-}

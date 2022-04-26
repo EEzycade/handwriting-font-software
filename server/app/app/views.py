@@ -4,7 +4,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, jso
 from werkzeug.utils import secure_filename
 from app.utils.security import requires_auth, devEnvironment
 from app.utils.web_utils import allowed_image, allowed_image_filesize, get_glyph, get_font_list
-from app.utils.constants import template_symbols_dict
+from app.utils import web_utils
 from uuid import uuid4
 import os
 from cv2 import imwrite, imread
@@ -18,7 +18,11 @@ def index():
     Summary: Homepage in the dev backend testing environment.
     Author: Hans Husurianto
     """
-    return render_template('public/image_to_font.html', title='Image To Font')
+    return render_template('public/image_to_font.html',
+                           title='Image To Font',
+                           base_fonts=web_utils.base_font_list(),
+                           templates=web_utils.template_dict(),
+    )
 
 # Route to process an image
 # Author: Hans Husurianto, Braeden Burgard
@@ -54,13 +58,23 @@ def process():
 
     # Retrieve Template Type
     # Authors: Braeden Burgard & Hans Husurianto
-    templateType = "english_lower_case_letters"
-    if 'template_type' in request.form and request.form['template_type'] not in template_symbols_dict:
+    templateType = secure_filename(request.form.get('template_type', "english_lower_case_letters"))
+    if templateType not in web_utils.template_dict():
         flash('Invalid template type', 'warning')
-        abort(400, "Invalid template type: %s" % request.form['template_type'])
-    elif 'template_type' in request.form:
-        templateType = request.form['template_type']
-    template = template_symbols_dict[templateType]
+        abort(400, "Invalid template type: %s" % templateType)
+    template = web_utils.load_template(templateType)
+
+    # Retrieve Base Font
+    # Author: Andrew Bauer
+    base_font = secure_filename(
+            request.form.get("base_font", app.config['DEFAULT_BASE_FONT'])
+    )
+    if os.path.exists(os.path.join(app.config["FONTS_FOLDER3"], base_font)):
+        print(f"Using '{base_font}' for missing characters.")
+    else:
+        flash(f'The base font \'{request.form["base_font"]}\' does not exist. Using the default base font \'{base_font}\' instead.', 'warning')
+        print(f'The base font \'{request.form["base_font"]}\' does not exist. Using the default base font \'{base_font}\' instead.')
+        base_font = app.config['DEFAULT_BASE_FONT']
 
     # Check that the image has an appropriate name
     # Author: Hans Husurianto
@@ -139,11 +153,13 @@ def process():
     svg_path = os.path.join(app.config['SVG_IMAGES'], internal_name)
     font_path = os.path.join(app.config['FONTS_FOLDER2'], internal_name + ".otf")
     clean(svg_path)
-    bmark.font.create(
-            unboxed_image_path,
-            svg_path,
-            font_path,
-    )
+    bmark.font.create(unboxed_image_path, svg_path, font_path)
+
+    # Pull missing characters from a base font
+    # Author: Andrew Bauer
+    base_font_path = os.path.join(app.config['FONTS_FOLDER3'], base_font)
+    assert os.path.exists(base_font_path)
+    bmark.font.merge_font(font_path, base_font_path, output_file=font_path)
 
     return Response("{'message':'Successfully converted image to font','filename':'"+ internal_name + ".otf" +"'}", status=201)
 
@@ -209,6 +225,27 @@ def font(filename):
     if not extension in ['.otf', '.ttf']:
         filename += '.otf'
     return send_from_directory(app.config['FONTS_FOLDER'], secure_filename(filename), as_attachment=True)
+
+@app.route('/base-fonts', methods=['GET'])
+def base_font_list():
+    return jsonify(web_utils.base_font_list())
+
+@app.route('/templates', methods=['GET'])
+def template_dict():
+    return jsonify(web_utils.template_dict())
+
+@app.route('/render-template/<path:template_name>')
+def create_template(template_name):
+    template_name = secure_filename(template_name)
+    if not os.path.exists(os.path.join(app.config["TEMPLATES_FOLDER"], template_name)):
+        print(f"Template '{template_name}' not found.")
+        abort(400, f"Template '{template_name}' not found.")
+    template = web_utils.load_template(template_name)
+    height = len(template)
+    width = len(template[0]) if template else 0
+    image = bmark.template.create(width*height, 50, 5)
+    image.save(os.path.join("app", app.config["TEMPLATE_IMAGES_FOLDER"], template_name + ".png"))
+    return send_from_directory(app.config["TEMPLATE_IMAGES_FOLDER"], template_name + ".png", as_attachment=True)
 
 @app.route('/preview')
 @devEnvironment

@@ -14,6 +14,11 @@ class Config(object):
     SVG_IMAGES = "./app/svgs"
     FONTS_FOLDER = "./fonts"
     FONTS_FOLDER2 = "./app/fonts"
+    FONTS_FOLDER3 = "./app/base_fonts"
+    TEMPLATES_FOLDER = "./app/character-templates"
+    TEMPLATE_IMAGES_FOLDER = "./template_images"
+
+    DEFAULT_BASE_FONT = "ComicSans.ttf"
 
     ALLOWED_IMAGE_EXTENSIONS = ["png", "jpg", "jpeg"]
     MAX_IMAGE_SIZE = 8 * 1024 * 1024  # 8MB
