@@ -87,22 +87,24 @@ def process():
 
     # Process Image, clean image
     # processed_image_tuple is a tuple (image,ratio)
-    # Author: Michaela Chen
-    processed_image_tuple = bmark.image.process(imread(upload_filepath))
+    # Author: Michaela Chen, Braeden Burgard
+    cropped_image = bmark.image.crop(imread(upload_filepath))
+    clean(app.config['CROPPED_IMAGES'])
+    imwrite(os.path.join(
+        app.config['CROPPED_IMAGES'], internal_name + ext), cropped_image)
+    processed_image = bmark.image.process(cropped_image, 300) 
     clean(app.config['PROCESSED_IMAGES'])
     imwrite(os.path.join(
-        app.config['PROCESSED_IMAGES'], internal_name + ext), processed_image_tuple[0])
+        app.config['PROCESSED_IMAGES'], internal_name + ext), processed_image)
     flash('Image processed successfully', 'success')
 
     # Find grid lines. For dev use only, this part is only for debugging purposes
     # Author: Braeden Burgard
     if app.config["DEBUG"]:
-        resized_image = bmark.image.resize(processed_image_tuple[0], 200)[0]
-        processed_image = processed_image_tuple[0]
-        grid_positions_tuple = bmark.image.detect_gridlines(
-            resized_image, template)
+        [horizontal_lines, vertical_lines, score] = bmark.image.detect_gridlines(
+            processed_image, template)
         grid_line_image = bmark.image.dev_grid_picture(
-            resized_image, grid_positions_tuple[0], grid_positions_tuple[1])
+            processed_image, horizontal_lines, vertical_lines)
         clean(app.config['GRID_IMAGES'])
         imwrite(os.path.join(
             app.config['GRID_IMAGES'], internal_name + ext), grid_line_image)
@@ -110,8 +112,9 @@ def process():
 
     # Cut image. cutImages is a tuple (cut_images, flattened_template)
     # cut_images_tuple = cut_image(imread(upload_filepath), processed_image, templateType, processed_image_tuple[1])
-    cut_images_tuple = bmark.image.cut(
-        processed_image, resized_image, template, processed_image_tuple[1])
+    cuttable_image = bmark.image.process(cropped_image, 1500) 
+    [cut_images, flattened_template] = bmark.image.cut(
+        cuttable_image, processed_image, template)
     cut_image_path = os.path.join(
         app.config['CUT_IMAGES'], internal_name)
     unboxed_image_path = os.path.join(
@@ -120,7 +123,7 @@ def process():
     )
     clean(cut_image_path)
     clean(unboxed_image_path)
-    for cutImage, symbol in zip(cut_images_tuple[0], cut_images_tuple[1]):
+    for cutImage, symbol in zip(cut_images, flattened_template):
         if symbol != None:
             if cutImage.size == 0:
                 flash("Grid estimation error, check output", "warning")
