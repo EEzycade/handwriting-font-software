@@ -48,7 +48,7 @@ def get_font_list():
     return os.listdir('./app/' + app.config['FONTS_FOLDER'])
 app.jinja_env.globals.update(get_font_list=get_font_list)
 
-def base_font_list() -> list[str]:
+def base_font_list() -> list:
     """
     Description: List available base fonts
     Author: Andrew Bauer
@@ -57,7 +57,7 @@ def base_font_list() -> list[str]:
     """
     return os.listdir(app.config["FONTS_FOLDER3"])
 
-def load_template(template_name: str) -> list[list[str]]:
+def load_template(template_name: str) -> list:
     """
     Description: Load a template and return a python list
     Author: Andrew Bauer
@@ -74,7 +74,7 @@ def load_template(template_name: str) -> list[list[str]]:
 
     return template
 
-def template_dict() -> dict[str, str]:
+def template_dict() -> dict:
     """
     Description: List available templates
     Author: Andrew Bauer
