@@ -145,7 +145,7 @@ def process():
     assert os.path.exists(base_font_path)
     bmark.font.merge_font(font_path, base_font_path, output_file=font_path)
 
-    return Response("{'message':'Successfully converted image to font','filename':'"+ internal_name + ".otf" +"'}", status=201)
+    return Response("{'status':'success','filename':'"+ internal_name + ".otf" +"'}", status=201)
 
 @app.route('/identify_character', methods=['POST'])
 @requires_auth
