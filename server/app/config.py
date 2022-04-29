@@ -26,12 +26,19 @@ class Config(object):
     SESSION_COOKIE_SECURE = True
 
 class ProductionConfig(Config):
-    pass
+    DEBUG = False
+    TESTING = False
+    SECRET_KEY = "a84ckkPu1reWiMFURW7oaA"
+    API_KEY = "254edfd6687a17117e5cfabe6e190cfa"
+    IP = ""
 
 class DevelopmentConfig(Config):
+    API_KEY = ""
+    IP = "127.0.0.1"
     DEBUG = True
     SESSION_COOKIE_STORE = False
 
 class TestingConfig(Config):
+    IP = "127.0.0.1"
     TESTING = True
     SESSION_COOKIE_STORE = False

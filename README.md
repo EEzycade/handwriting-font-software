@@ -1,2 +1,4 @@
 # handwriting-font-software
-Repo to develop the custom handwriting font software for BookMarked (name pending)
+BookMarked Handwriting Software is an API for converting handwriting to font.
+
+[Documentation](https://ha-bookmarked-api.readthedocs.io/en/latest/)
