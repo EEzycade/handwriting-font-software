@@ -243,7 +243,7 @@ def create_template(template_name):
     template = web_utils.load_template(template_name)
     height = len(template)
     width = len(template[0]) if template else 0
-    image = bmark.template.create(width*height, 50, 5)
+    image = bmark.template.create(width,height, 50, 5)
     image.save(os.path.join("app", app.config["TEMPLATE_IMAGES_FOLDER"], template_name + ".png"))
     return send_from_directory(app.config["TEMPLATE_IMAGES_FOLDER"], template_name + ".png", as_attachment=True)
 
